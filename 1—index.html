@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Digital Boost MY | 重新定义社媒视觉</title>
+
+<!-- 字体加载 -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Unbounded:wght@400;700;900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+
+<!-- 核心引擎加载 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS (顶级视觉变量)
+═══════════════════════════════════════ */
+:root {
+  --bg:      #0b0b09;
+  --bg1:     #111110;
+  --bg2:     #181816;
+  --surface: #1e1e1b;
+  --gold:    #c8a84b;
+  --gold2:   #e8c870;
+  --goldDim: rgba(200,168,75,0.15);
+  --cream:   #f4f0e6;
+  --white:   #ffffff;
+  --muted:   #6b6860;
+  --green:   #4bc87a;
+  --border:  rgba(255,255,255,0.08);
+  --r:       20px;
+  --container-width: 1200px;
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* ═══════════════════════════════════════
+   BASE RESET
+═══════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html.lenis{height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+body{
+  background:var(--bg);
+  color:var(--cream);
+  font-family:'Noto Sans SC', sans-serif;
+  overflow-x:hidden;
+  line-height:1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+
+/* ═══════════════════════════════════════
+   GLOBAL ELEMENTS
+═══════════════════════════════════════ */
+.container {
+  width: 100%;
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* 顶级噪点纹理 */
+.noise-overlay {
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 磁吸光标 */
+.cursor {
+  position: fixed; width: 20px; height: 20px; background: var(--gold);
+  border-radius: 50%; pointer-events: none; z-index: 10000;
+  mix-blend-mode: difference; transition: transform 0.2s ease;
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  padding: 20px 0; transition: all 0.4s var(--ease-out-expo);
+}
+nav.scrolled {
+  background: rgba(11,11,9,0.8);
+  backdrop-filter: blur(20px);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.nav-content {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: var(--container-width); margin: 0 auto; padding: 0 28px;
+}
+.nav-logo {
+  font-family: 'Unbounded', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: -0.5px; color: var(--white);
+}
+.nav-logo span { color: var(--gold); }
+.nav-cta {
+  background: var(--gold); color: var(--bg);
+  font-size: 12px; font-weight: 700; padding: 10px 20px;
+  border-radius: 100px; transition: all 0.3s var(--ease-out-expo);
+}
+.nav-cta:hover { transform: scale(1.05); box-shadow: 0 10px 20px rgba(200,168,75,0.3); }
+
+/* ═══════════════════════════════════════
+   HERO SECTION (Awwwards Style)
+═══════════════════════════════════════ */
+.hero {
+  min-height: 100svh; display: flex; align-items: center;
+  position: relative; overflow: hidden; padding: 120px 0 60px;
+}
+.hero-bg {
+  position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(circle at 50% 50%, #1a1a16 0%, #0b0b09 100%);
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(200,168,75,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(200,168,75,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
+}
+.hero-orb {
+  position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+  opacity: 0.4; animation: orbPulse 10s infinite alternate ease-in-out;
+}
+.orb-1 { width: 40vw; height: 40vw; top: -10%; right: -10%; background: var(--gold); }
+.orb-2 { width: 30vw; height: 30vw; bottom: -10%; left: -10%; background: #2c5f8a; animation-delay: -5s; }
+
+@keyframes orbPulse { 
+  0% { transform: scale(1) translate(0,0); } 
+  100% { transform: scale(1.2) translate(-5%, 5%); } 
+}
+
+.hero-content { position: relative; z-index: 10; }
+.hero-eyebrow {
+  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 24px; display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
+
+/* 文字掩码效果 */
+.reveal-text {
+  overflow: hidden; display: block; line-height: 1.1;
+}
+.hero-h1 {
+  font-family: 'Unbounded', sans-serif; font-size: clamp(40px, 10vw, 88px);
+  font-weight: 900; color: var(--white); line-height: 1.05; letter-spacing: -3px;
+  margin-bottom: 20px;
+}
+.hero-h1 em { color: var(--gold); font-style: normal; }
+
+.hero-h2 {
+  font-family: 'Lora', serif; font-size: clamp(18px, 4vw, 24px);
+  color: rgba(255,255,255,0.4); font-style: italic;
+  max-width: 600px; margin-bottom: 40px;
+}
+
+.hero-actions { display: flex; gap: 16px; }
+.btn-primary {
+  background: var(--gold); color: var(--bg); font-weight: 700;
+  padding: 18px 32px; border-radius: 12px; transition: all 0.3s var(--ease-out-expo);
+}
+.btn-secondary {
+  border: 1px solid var(--border); color: var(--white);
+  padding: 18px 32px; border-radius: 12px; transition: all 0.3s var(--ease-out-expo);
+  backdrop-filter: blur(10px);
+}
+.btn-primary:hover, .btn-secondary:hover { transform: translateY(-5px); background: var(--white); color: var(--bg); }
+
+/* ═══════════════════════════════════════
+   SECTION COMMON
+═══════════════════════════════════════ */
+.sec { padding: 120px 0; position: relative; }
+.sec-title-wrap { margin-bottom: 60px; }
+.sec-eyebrow {
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 12px; display: block;
+}
+.sec-title {
+  font-family: 'Unbounded', sans-serif; font-size: clamp(32px, 6vw, 48px);
+  font-weight: 700; line-height: 1.1; color: var(--white);
+}
+
+/* ═══════════════════════════════════════
+   PAIN GRID (Modern Glassmorphism)
+═══════════════════════════════════════ */
+.pain-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px; margin-bottom: 60px;
+}
+.pain-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 32px; border-radius: var(--r);
+  transition: all 0.4s var(--ease-out-expo);
+  position: relative; overflow: hidden;
+}
+.pain-card:hover {
+  border-color: var(--gold); transform: translateY(-10px);
+  background: rgba(30,30,27, 0.8);
+}
+.pain-card .icon { font-size: 32px; margin-bottom: 20px; display: block; }
+.pain-card h3 { font-size: 18px; color: var(--white); margin-bottom: 12px; }
+.pain-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+/* ═══════════════════════════════════════
+   CASES SLIDER (Enhanced)
+═══════════════════════════════════════ */
+.case-card {
+  background: var(--bg1); border: 1px solid var(--border);
+  border-radius: 30px; overflow: hidden;
+  max-width: 800px; margin: 0 auto 60px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.4);
+}
+.case-header {
+  padding: 24px; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.case-info h4 { font-size: 16px; color: var(--white); }
+.case-info span { font-size: 12px; color: var(--muted); }
+
+.slider-container {
+  position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; cursor: col-resize;
+}
+.slider-img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+}
+.slider-before {
+  position: absolute; inset: 0; z-index: 2;
+  clip-path: inset(0 50% 0 0);
+}
+.slider-handle {
+  position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+  background: var(--white); z-index: 3; transform: translateX(-50%);
+  pointer-events: none;
+}
+.handle-circle {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 40px; height: 40px; background: var(--white);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: var(--bg); font-weight: 900; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+/* ═══════════════════════════════════════
+   PRICING (High-End)
+═══════════════════════════════════════ */
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+.price-card {
+  padding: 40px; border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--border);
+  transition: all 0.4s var(--ease-out-expo);
+  display: flex; flex-direction: column;
+}
+.price-card.featured {
+  border: 2px solid var(--gold);
+  background: linear-gradient(145deg, #1e1e1b 0%, #111110 100%);
+  transform: scale(1.05);
+}
+.price-card:hover { transform: translateY(-10px); border-color: var(--gold); }
+.price-card .tier { font-size: 12px; text-transform: uppercase; color: var(--gold); letter-spacing: 2px; margin-bottom: 10px; }
+.price-card .amount { font-family: 'Unbounded', sans-serif; font-size: 48px; font-weight: 700; margin-bottom: 20px; }
+.price-card .features { list-style: none; margin-bottom: 30px; flex-grow: 1; }
+.price-card .features li { font-size: 14px; margin-bottom: 12px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+.price-card .features li::before { content: '✓'; color: var(--gold); font-weight: 900; }
+
+/* ═══════════════════════════════════════
+   FINAL CTA
+═══════════════════════════════════════ */
+.cta-section {
+  text-align: center; padding: 160px 0; position: relative;
+  background: radial-gradient(circle at center, #1a1a16 0%, #0b0b09 100%);
+}
+.cta-title {
+  font-family: 'Unbounded', sans-serif; font-size: clamp(32px, 8vw, 64px);
+  font-weight: 900; margin-bottom: 24px; line-height: 1.1;
+}
+.cta-title span { color: var(--gold); }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .hero-actions { flex-direction: column; }
+  .price-card.featured { transform: scale(1); }
+  .slider-container { aspect-ratio: 4/5; }
+}
+</style>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+<div class="cursor"></div>
+
+<nav id="main-nav">
+  <div class="nav-content">
+    <div class="nav-logo">Digital<span>Boost</span>MY</div>
+    <a href="#cta" class="nav-cta">免费试用</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-orb orb-1"></div>
+  <div class="hero-orb orb-2"></div>
+
+  <div class="container hero-content">
+    <div class="hero-eyebrow">
+      <span>Digital Design Agency · MY</span>
+    </div>
+    <h1 class="hero-h1">
+      <span class="reveal-text">你的生意</span><br>
+      <span class="reveal-text">值得被 <em>更多人</em></span><br>
+      <span class="reveal-text">看见。</span>
+    </h1>
+    <p class="hero-h2">专业设计 + 内容策略，帮本地商家把社媒做好做对，将流量转化为真实的订单。</p>
+    <div class="hero-actions">
+      <a href="#cases" class="btn-primary">看看我们的作品</a>
+      <a href="#cta" class="btn-secondary">WhatsApp 了解详情</a>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="pain">
+  <div class="container">
+    <div class="sec-title-wrap">
+      <span class="sec-eyebrow">The Truth</span>
+      <h2 class="sec-title">老板，你是不是<br>也有这些问题？</h2>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <span class="icon">😮‍💨</span>
+        <h3>每天忙到没时间更新</h3>
+        <p>管员工、处理货源、接待顾客，哪有时间想帖子？Instagram 上个月才发一次。</p>
+      </div>
+      <div class="pain-card">
+        <span class="icon">📉</span>
+        <h3>发了帖子也没人理</h3>
+        <p>随手拍上去，点赞五六个。明明竞争对手的帖子互动极高，搞不懂为什么。</p>
+      </div>
+      <div class="pain-card">
+        <span class="icon">🤷</span>
+        <h3>根本不知道发什么</h3>
+        <p>打开手机脑子空白。没策略没方向，发出来的东西缺乏品牌感和吸引力。</p>
+      </div>
+      <div class="pain-card">
+        <span class="icon">💸</span>
+        <h3>广告公司收费太贵</h3>
+        <p>传统 Agency 一个月要 RM5,000。小生意请不起，但又知道网络宣传至关重要。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="cases" style="background: var(--bg1);">
+  <div class="container">
+    <div class="sec-title-wrap" style="text-align: center;">
+      <span class="sec-eyebrow">Portfolio</span>
+      <h2 class="sec-title">左右拖动，<br>感知视觉的力量。</h2>
+    </div>
+
+    <!-- Case 1 -->
+    <div class="case-card">
+      <div class="case-header">
+        <div class="case-info">
+          <h4>奶茶店 · 招牌产品帖</h4>
+          <span>餐饮 F&B / 互动提升 +280%</span>
+        </div>
+        <div class="case-pill" style="color:var(--green); font-size:12px; font-weight:700;">SUCCESS</div>
+      </div>
+      <div class="slider-container" data-slider>
+        <!-- After (Bottom Layer) -->
+        <div class="slider-img" style="background: linear-gradient(145deg,#180828,#8a1888); display:flex; align-items:center; justify-content:center; font-family:'Unbounded'; color:white; text-align:center; flex-direction:column;">
+          <div style="font-size:60px">🧋</div>
+          <div style="font-size:24px; font-weight:900">黑糖珍珠鲜奶茶</div>
+          <div style="color:var(--gold); font-weight:700">RM 12.90</div>
+        </div>
+        <!-- Before (Top Layer) -->
+        <div class="slider-img slider-before" style="background: #ede9e0; display:flex; align-items:center; justify-content:center; color:#666; text-align:center; flex-direction:column;">
+          <div style="font-size:60px">🧋</div>
+          <div style="font-size:14px">黑糖奶茶 RM12.90<br>好喝哦！欢迎来试😊</div>
+        </div>
+        <div class="slider-handle">
+          <div class="handle-circle">⇔</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="container">
+    <div class="sec-title-wrap">
+      <span class="sec-eyebrow">Pricing</span>
+      <h2 class="sec-title">简单透明，<br>没有隐藏费用。</h2>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="tier">基础版 · Starter</div>
+        <div class="amount">RM250</div>
+        <ul class="features">
+          <li>每周 3 张专业设计图</li>
+          <li>华语文案策划</li>
+          <li>Hashtag 策略优化</li>
+          <li>每月内容方向规划</li>
+        </ul>
+        <a href="#cta" class="btn-secondary" style="text-align:center">立即开始</a>
+      </div>
+      <div class="price-card featured">
+        <div class="tier">专业版 · Professional</div>
+        <div class="amount">RM450</div>
+        <ul class="features">
+          <li>每周 3 张顶级视觉设计</li>
+          <li>三语文案（中/英/BM）</li>
+          <li>Stories 版本同步设计</li>
+          <li>节假日主题特别海报</li>
+          <li>月度效果简单分析</li>
+        </ul>
+        <a href="#cta" class="btn-primary" style="text-align:center">最受欢迎 - 立即选择</a>
+      </div>
+      <div class="price-card">
+        <div class="tier">高级版 · Premium</div>
+        <div class="amount">RM700</div>
+        <ul class="features">
+          <li>每周 5 张顶级视觉设计</li>
+          <li>全年内容战略规划</li>
+          <li>Stories + Reel 封面设计</li>
+          <li>促销活动全套视觉系统</li>
+          <li>优先交付 + 详细分析报告</li>
+        </ul>
+        <a href="#cta" class="btn-secondary" style="text-align:center">立即升级</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <div class="container">
+    <h2 class="cta-title">你的顾客在网上找你，<br><span>别让他们找不到。</span></h2>
+    <p style="color:var(--muted); margin-bottom:40px; max-width:600px; margin-left:auto; margin-right:auto;">
+      第一周完全免费。先看效果，满意才谈合作。
+      你什么都不用准备，我们来搞定一切。
+    </p>
+    <div class="hero-actions" style="justify-content:center">
+      <a href="https://wa.me/60XXXXXXXXX" class="btn-primary" style="padding: 20px 40px; font-size:18px">📱 WhatsApp 免费开始</a>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ═══════════════════════════════════════
+   CORE ENGINE: LENIS SMOOTH SCROLL
+═══════════════════════════════════════ */
+const lenis = new Lenis();
+function raf(time) {
+  lenis.raf(time);
+  requestAnimationFrame(raf);
+}
+requestAnimationFrame(raf);
+
+/* ═══════════════════════════════════════
+   GSAP ANIMATIONS: THE SOUL
+═══════════════════════════════════════ */
+gsap.registerPlugin(ScrollTrigger);
+
+// 1. Hero 文字掩码动画
+const tl = gsap.timeline();
+tl.from(".hero-eyebrow", {
+  y: 20, opacity: 0, duration: 0.8, ease: "expo.out"
+})
+.from(".reveal-text", {
+  y: 100, opacity: 0, duration: 1, stagger: 0.2, ease: "expo.out"
+}, "-=0.6")
+.from(".hero-h2", {
+  opacity: 0, y: 20, duration: 0.8, ease: "expo.out"
+}, "-=0.8")
+.from(".hero-actions", {
+  opacity: 0, y: 20, duration: 0.8, ease: "expo.out"
+}, "-=0.6");
+
+// 2. 导航栏滚动效果
+window.addEventListener("scroll", () => {
+  const nav = document.getElementById("main-nav");
+  if (window.scrollY > 50) nav.classList.add("scrolled");
+  else nav.classList.remove("scrolled");
+});
+
+// 3. 痛点卡片交错进入
+gsap.from(".pain-card", {
+  scrollTrigger: {
+    trigger: ".pain-grid",
+    start: "top 80%",
+  },
+  y: 60,
+  opacity: 0,
+  duration: 0.8,
+  stagger: 0.15,
+  ease: "expo.out"
+});
+
+// 4. 价格卡片入场
+gsap.from(".price-card", {
+  scrollTrigger: {
+    trigger: ".pricing-grid",
+    start: "top 80%",
+  },
+  scale: 0.9,
+  opacity: 0,
+  duration: 0.8,
+  stagger: 0.1,
+  ease: "back.out(1.7)"
+});
+
+/* ═══════════════════════════════════════
+   INTERACTIVE: CUSTOM CURSOR
+═══════════════════════════════════════ */
+const cursor = document.querySelector(".cursor");
+window.addEventListener("mousemove", (e) => {
+  gsap.to(cursor, {
+    x: e.clientX,
+    y: e.clientY,
+    duration: 0.5,
+    ease: "power3.out"
+  });
+});
+
+// 按钮磁吸效果
+document.querySelectorAll("a, button").forEach(btn => {
+  btn.addEventListener("mouseenter", () => {
+    gsap.to(cursor, { scale: 3, backgroundColor: "white", mixBlendMode: "difference" });
+  });
+  btn.addEventListener("mouseleave", () => {
+    gsap.to(cursor, { scale: 1, backgroundColor: "var(--gold)", mixBlendMode: "difference" });
+  });
+});
+
+/* ═══════════════════════════════════════
+   THE SLIDER LOGIC
+═══════════════════════════════════════ */
+document.querySelectorAll('[data-slider]').forEach(wrap => {
+  const before = wrap.querySelector('.slider-before');
+  const handle = wrap.querySelector('.slider-handle');
+  let isDragging = false;
+
+  const move = (x) => {
+    const rect = wrap.getBoundingClientRect();
+    let pct = ((x - rect.left) / rect.width) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+    
+    gsap.to(before, { clipPath: `inset(0 ${100 - pct}% 0 0)`, duration: 0.1 });
+    gsap.to(handle, { left: `${pct}%`, duration: 0.1 });
+  };
+
+  wrap.addEventListener('mousedown', () => isDragging = true);
+  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('mousemove', (e) => {
+    if (isDragging) move(e.clientX);
+  });
+
+  // Touch support
+  wrap.addEventListener('touchstart', () => isDragging = true);
+  window.addEventListener('touchend', () => isDragging = false);
+  window.addEventListener('touchmove', (e) => {
+    if (isDragging) move(e.touches[0].clientX);
+  });
+});
+</script>
+</body>
+</html>
