@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>J1ED3SIGN | 设计，让生意被看见</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Unbounded:wght@400;700;900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+
+<!-- 核心引擎 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+
+<style>
+:root {
+  --bg: #080806;
+  --bg-accent: #0f0f0d;
+  --gold: #c8a84b;
+  --gold-light: #e8c870;
+  --gold-dim: rgba(200, 168, 75, 0.15);
+  --cream: #f0ece0;
+  --white: #ffffff;
+  --muted: #62605a;
+  --border: rgba(255, 255, 255, 0.08);
+  --container: 1280px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--cream);
+  font-family: 'Noto Sans SC', sans-serif;
+  overflow-x: hidden; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────
+   CORE UTILITIES
+───────────────────────────────────── */
+.container { width: 100%; max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.text-gold { color: var(--gold); }
+.noise {
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ─────────────────────────────────────
+   LIQUID GLASS BUTTONS (顶级交互)
+───────────────────────────────────── */
+.btn-liquid {
+  position: relative; padding: 16px 32px; border-radius: 100px;
+  font-weight: 700; font-size: 14px; transition: all 0.4s var(--ease);
+  display: inline-flex; align-items: center; gap: 10px; overflow: hidden;
+  cursor: pointer; text-decoration: none;
+}
+.btn-gold {
+  background: var(--gold); color: var(--bg);
+  box-shadow: 0 10px 30px rgba(200, 168, 75, 0.3);
+}
+.btn-glass {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--white); border: 1px solid var(--border);
+  backdrop-filter: blur(15px);
+}
+.btn-liquid::after {
+  content: ''; position: absolute; top: -50%; left: -100%;
+  width: 150%; height: 200%;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+  transform: rotate(15deg); transition: left 0.6s var(--ease);
+}
+.btn-liquid:hover { transform: translateY(-3px); scale: 1.02; }
+.btn-liquid:hover::after { left: 100%; }
+
+/* ─────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  padding: 20px 0; transition: all 0.4s var(--ease);
+}
+nav.scrolled {
+  background: rgba(8, 8, 6, 0.85); backdrop-filter: blur(20px);
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.nav-content {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: var(--container); margin: 0 auto; padding: 0 24px;
+}
+.logo { font-family: 'Unbounded', sans-serif; font-size: 16px; font-weight: 900; color: var(--white); }
+.logo span { color: var(--gold); }
+
+/* ─────────────────────────────────────
+   HERO (Editorial Style)
+───────────────────────────────────── */
+.hero {
+  min-height: 100svh; display: flex; align-items: center;
+  position: relative; padding: 120px 0 60px; overflow: hidden;
+}
+.hero-bg-text {
+  position: absolute; font-family: 'Unbounded', sans-serif;
+  font-size: 20vw; font-weight: 900; color: rgba(200,168,75,0.03);
+  line-height: 0.8; z-index: -1; pointer-events: none;
+  white-space: nowrap; text-transform: uppercase;
+}
+.hero-content { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; }
+.hero-left h1 {
+  font-family: 'Unbounded', sans-serif; font-size: clamp(48px, 8vw, 110px);
+  font-weight: 900; line-height: 0.9; letter-spacing: -4px; margin-bottom: 30px;
+}
+.hero-left .highlight { color: var(--gold); display: block; }
+.hero-right {
+  background: var(--bg-accent); padding: 40px; border-radius: 40px;
+  border: 1px solid var(--border); position: relative;
+}
+.hero-right p {
+  font-family: 'Lora', serif; font-style: italic; font-size: 20px;
+  color: rgba(255,255,255,0.6); margin-bottom: 30px;
+}
+.hero-stats {
+  display: flex; gap: 30px; margin-top: 40px;
+}
+.stat-item { display: flex; flex-direction: column; }
+.stat-val { font-family: 'Unbounded', sans-serif; font-size: 32px; font-weight: 900; color: var(--white); }
+.stat-lab { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+
+/* ─────────────────────────────────────
+   PAIN SECTION (The Grid)
+───────────────────────────────────── */
+.sec { padding: 140px 0; position: relative; }
+.sec-header { margin-bottom: 80px; max-width: 700px; }
+.sec-header h2 {
+  font-family: 'Unbounded', sans-serif; font-size: clamp(32px, 6vw, 64px);
+  line-height: 1; margin-bottom: 20px;
+}
+.sec-header .sub-title { color: var(--gold); font-size: 14px; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; display: block; }
+
+.pain-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+.pain-card {
+  background: var(--bg-accent); border: 1px solid var(--border);
+  padding: 40px; border-radius: 30px; transition: all 0.4s var(--ease);
+  position: relative; overflow: hidden;
+}
+.pain-card:hover { border-color: var(--gold); transform: translateY(-10px); }
+.pain-card h3 { font-size: 22px; margin-bottom: 15px; color: var(--white); }
+.pain-card p { color: var(--muted); font-size: 15px; }
+.pain-card .num {
+  position: absolute; top: -20px; right: -10px; font-family: 'Unbounded';
+  font-size: 80px; font-weight: 900; color: rgba(200,168,75,0.05);
+}
+
+/* ─────────────────────────────────────
+   CASE SECTION (The Comparison)
+───────────────────────────────────── */
+.case-wrap {
+  max-width: 900px; margin: 0 auto 100px;
+}
+.case-info { text-align: center; margin-bottom: 40px; }
+.case-card {
+  background: var(--bg-accent); border-radius: 40px; overflow: hidden;
+  border: 1px solid var(--border); box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+}
+.slider-container {
+  position: relative; width: 100%; aspect-ratio: 4/3; overflow: hidden; cursor: col-resize;
+}
+.slider-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.slider-before {
+  position: absolute; inset: 0; z-index: 2;
+  clip-path: inset(0 50% 0 0);
+}
+.slider-handle {
+  position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+  background: var(--white); z-index: 3; transform: translateX(-50%);
+}
+.handle-circle {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 50px; height: 50px; background: var(--white);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: var(--bg); font-weight: 900; box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+.case-footer {
+  display: grid; grid-template-columns: 1fr 1fr;
+  padding: 30px; background: rgba(255,255,255,0.02);
+  border-top: 1px solid var(--border);
+}
+.footer-item { padding: 0 20px; }
+.footer-item h4 { color: var(--gold); font-size: 14px; margin-bottom: 5px; }
+.footer-item p { font-size: 13px; color: var(--muted); }
+
+/* ─────────────────────────────────────
+   TRANSFORMATION (Kampung to Pro)
+───────────────────────────────────── */
+.transform-container {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+}
+.t-column {
+  padding: 40px; border-radius: 40px; border: 1px solid var(--border);
+  transition: all 0.4s var(--ease);
+}
+.t-column.bad { background: rgba(200, 75, 75, 0.03); }
+.t-column.good { background: rgba(75, 200, 122, 0.03); border-color: var(--gold); }
+.t-column h3 { font-family: 'Unbounded'; font-size: 24px; margin-bottom: 30px; }
+.t-list { list-style: none; }
+.t-list li {
+  padding: 15px 0; border-bottom: 1px solid var(--border);
+  font-size: 15px; display: flex; gap: 12px; align-items: center;
+}
+.t-list li::before { content: '→'; color: var(--gold); }
+
+/* ─────────────────────────────────────
+   PRICING (The High-End)
+───────────────────────────────────── */
+.pricing-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+.price-card {
+  padding: 50px 40px; border-radius: 40px;
+  background: var(--bg-accent); border: 1px solid var(--border);
+  transition: all 0.4s var(--ease); position: relative;
+}
+.price-card.popular {
+  border: 2px solid var(--gold); transform: scale(1.05);
+  background: linear-gradient(145deg, #1e1e1b 0%, #0b0b09 100%);
+}
+.price-card .tier { font-size: 12px; text-transform: uppercase; color: var(--gold); letter-spacing: 2px; }
+.price-card .amount { font-family: 'Unbounded'; font-size: 48px; font-weight: 900; margin: 10px 0 30px; }
+.price-card ul { list-style: none; margin-bottom: 40px; }
+.price-card li { font-size: 14px; margin-bottom: 12px; color: var(--muted); }
+.price-card li::before { content: '✓'; color: var(--gold); margin-right: 10px; }
+
+/* ─────────────────────────────────────
+   FINAL CTA
+───────────────────────────────────── */
+.cta-section {
+  text-align: center; padding: 160px 0;
+  background: radial-gradient(circle at center, #1a1a16 0%, #080806 100%);
+}
+.cta-h2 {
+  font-family: 'Unbounded'; font-size: clamp(32px, 6vw, 72px);
+  font-weight: 900; line-height: 1.1; margin-bottom: 30px;
+}
+.cta-h2 span { color: var(--gold); }
+
+/* ─────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────── */
+@media (max-width: 1024px) {
+  .hero-content { grid-template-columns: 1fr; text-align: center; }
+  .hero-left h1 { text-align: center; }
+  .hero-right { max-width: 600px; margin: 0 auto; }
+  .transform-container { grid-template-columns: 1fr; }
+  .hero-stats { justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+
+<nav id="main-nav">
+  <div class="nav-content">
+    <div class="logo">J1<span>ED</span>3SIGN</div>
+    <a href="#cta" class="btn-liquid btn-gold">免费试做 →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg-text">VISION GROW</div>
+  <div class="container hero-content">
+    <div class="hero-left">
+      <h1 data-reveal>
+        设计，让<br>
+        <span class="highlight">生意被看见。</span>
+      </h1>
+    </div>
+    <div class="hero-right" data-reveal>
+      <p>“还在等顾客自动送上门？<br><strong>我们帮你把流量 吸 过来。</strong>”</p>
+      <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <a href="#cases" class="btn-liquid btn-gold">💹 看看成功案例</a>
+        <a href="#cta" class="btn-liquid btn-glass">📲 WhatsApp 了解方案</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <div class="stat-val">20+</div>
+          <div class="stat-lab">作品案例</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">3x</div>
+          <div class="stat-lab">客流增加</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">RM0</div>
+          <div class="stat-lab">免费试做</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="container">
+    <div class="sec-header" data-reveal>
+      <span class="sub-title">The Pain Points</span>
+      <h2>老板，是不是也遇到<br><span class="text-gold">这些问题？</span></h2>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card" data-reveal>
+        <div class="num">01</div>
+        <h3>做到要死 LIKE 没有几个</h3>
+        <p>FB/IG 开了几年，post 发出去 like 才二三十个，大多还是自己人按的。别家随便发都几百个，看了真的很闲。</p>
+      </div>
+      <div class="pain-card" data-reveal>
+        <div class="num">02</div>
+        <h3>哪里还有时间想 content？</h3>
+        <p>每天都要顾工人，要点货，要做生意，上厕所都不得空。上的 post 还是个月前，账号死气沉沉。</p>
+      </div>
+      <div class="pain-card" data-reveal>
+        <div class="num">03</div>
+        <h3>不懂发什么，随便发</h3>
+        <p>想到就随便 upload，没有方向没有策略。结果发了 = 没有发，根本吸引不到新顾客，做来自己爽罢了。</p>
+      </div>
+      <div class="pain-card" data-reveal>
+        <div class="num">04</div>
+        <h3>设计师太贵，不请又怕输</h3>
+        <p>请个设计师要几千块一个月，小生意顶不顺。但不做线上宣传，真的吸引不到年轻顾客。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="background: var(--bg-accent);">
+  <div class="container">
+    <div class="sec-header" data-reveal>
+      <span class="sub-title">The Data Proof</span>
+      <h2>用真实数据，<br>给你一个不能等的理由</h2>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card" data-reveal>
+        <h3 class="text-gold" style="font-size: 48px; font-family: 'Unbounded';">86%</h3>
+        <p><strong>大马消费者</strong>在决定光顾之前，都会先看 FB/IG。账号空空，他们肯定去试别家。</p>
+      </div>
+      <div class="pain-card" data-reveal>
+        <h3 class="text-gold" style="font-size: 48px; font-family: 'Unbounded';">3x</h3>
+        <p><strong>客流量增加</strong>。专业内容的商家，通过设计吸引到的咨询量，是普通商家的数倍。</p>
+      </div>
+      <div class="pain-card" data-reveal>
+        <h3 class="text-gold" style="font-size: 48px; font-family: 'Unbounded';">20+</h3>
+        <p><strong>真实落地案例</strong>。从 Kopitiam 到 Cafe，零售到网卖，我们有实打实引流经验。</p>
+      </div>
+    </div>
+    <div style="margin-top: 60px; text-align: center; font-family: 'Lora'; font-style: italic; font-size: 24px; opacity: 0.8;" data-reveal>
+      "你不是不看重生意 —— 你只是没有时间兼顾每一件事。<br><strong>这就是我们存在的原因。</strong>"
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="cases">
+  <div class="container">
+    <div class="case-info" data-reveal>
+      <span class="sub-title">Visual Power</span>
+      <h2 style="font-family: 'Unbounded'; font-size: 48px; margin-bottom: 20px;">Before VS After</h2>
+      <p>同样的商品，通过【构图重组、色彩处理、文案植入】，重塑你的照片。</p>
+    </div>
+
+    <div class="case-wrap" data-reveal>
+      <div class="case-card">
+        <div class="slider-container" data-slider>
+          <div class="slider-img" style="background: linear-gradient(145deg, #180828, #8a1888); display:flex; align-items:center; justify-content:center; flex-direction:column; color:white; font-family:'Unbounded';">
+            <div style="font-size:60px">🧋</div>
+            <div style="font-size:24px; font-weight:900">黑糖珍珠鲜奶茶</div>
+            <div style="color:var(--gold)">RM 12.90</div>
+          </div>
+          <div class="slider-img slider-before" style="background: #e8e4da; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#666;">
+            <div style="font-size:60px">🧋</div>
+            <div style="font-size:14px">黑糖奶茶 RM12.90<br>好喝哦！欢迎来试😊</div>
+          </div>
+          <div class="slider-handle">
+            <div class="handle-circle">⇔</div>
+          </div>
+        </div>
+        <div class="case-footer">
+          <div class="footer-item">
+            <h4>设计逻辑</h4>
+            <p>通过深紫色调增强产品的高级感，利用光晕营造视觉重心，将文字从“描述”升级为“诱惑”。</p>
+          </div>
+          <div class="footer-item" style="text-align: right;">
+            <h4>转化结果</h4>
+            <p>之前：发 5 个 post, 0 新客问<br>现在：每一条 post 都在 auto 筛选客户</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="container">
+    <div class="sec-header" data-reveal>
+      <span class="sub-title">Transformation</span>
+      <h2>从 Kampung Style<br><span class="text-gold">升级到 Professional</span></h2>
+    </div>
+    <div class="transform-container">
+      <div class="t-column bad" data-reveal>
+        <h3>合作前 ⚠️</h3>
+        <ul class="t-list">
+          <li>随便拍，模糊灯光暗</li>
+          <li>只会写“好吃”，没有故事</li>
+          <li>几个月没发 post，顾客以为倒闭</li>
+          <li>Like 才几十个，都是熟人</li>
+          <li>颜色死板，没有风格特点</li>
+        </ul>
+      </div>
+      <div class="t-column good" data-reveal>
+        <h3>合作后 ✨</h3>
+        <ul class="t-list">
+          <li>专业视觉设计，还没吃就流口水</li>
+          <li>有温度的文案，想象到味道</li>
+          <li>定时 update，提醒顾客“该来了”</li>
+          <li>互动率高，精准吸引新客</li>
+          <li>统一品牌色，封面即品牌</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="background: var(--bg-accent);">
+  <div class="container">
+    <div class="sec-header" data-reveal>
+      <span class="sub-title">Our Services</span>
+      <h2>你专心做生意，<br><span class="text-gold">剩下的交给我们。</span></h2>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card" data-reveal>
+        <div class="num">01</div>
+        <h3>专业帖子设计</h3>
+        <p>每周 3-5 张精修图，专属店铺 style。Story + Post 全套尺寸，视觉统一，一眼认出你。</p>
+      </div>
+      <div class="pain-card" data-reveal>
+        <div class="num">02</div>
+        <h3>本地文案策划</h3>
+        <p>中英BM三语文案，懂大马人痛点。每月内容日历，跟着节日走 (Raya, CNY, Merdeka) 规划内容。</p>
+      </div>
+      <div class="pain-card" data-reveal>
+        <div class="num">03</div>
+        <h3>月度营销策略</h3>
+        <p>新品、Promotion 节奏规划。有节奏地发 post，掌控流量，勾起消费欲望。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="container">
+    <div class="sec-header" data-reveal style="text-align: center;">
+      <span class="sub-title">Pricing</span>
+      <h2>价格透明，<br><span class="text-gold">没有隐藏收费。</span></h2>
+      <p>一天不到一餐饭的钱，请一整个营销团队</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card" data-reveal>
+        <div class="tier">Starter 基础版</div>
+        <div class="amount">RM250</div>
+        <ul>
+          <li>每周 3 张设计图</li>
+          <li>每月内容策划</li>
+          <li>48 小时交付</li>
+          <li>单语文案</li>
+        </ul>
+        <a href="#cta" class="btn-liquid btn-glass" style="width: 100%; justify-content: center;">立即咨询</a>
+      </div>
+      <div class="price-card popular" data-reveal>
+        <div class="tier">Professional 专业版</div>
+        <div class="amount">RM488</div>
+        <ul>
+          <li>每周 4 张设计图</li>
+          <li>三语文案 (中/英/BM)</li>
+          <li>每月营销策略 + Hashtag</li>
+          <li>含 Stories 版设计</li>
+          <li>节假日主题海报</li>
+          <li>月度效果分析</li>
+        </ul>
+        <a href="#cta" class="btn-liquid btn-gold" style="width: 100%; justify-content: center;">最受欢迎 - 立即选择</a>
+      </div>
+      <div class="price-card" data-reveal>
+        <div class="tier">Premium 旗舰款</div>
+        <div class="amount">RM888</div>
+        <ul>
+          <li>每周 5 张设计图</li>
+          <li>三语文案 + 策略分析</li>
+          <li>年度战略规划</li>
+          <li>Stories + Reels 封面</li>
+          <li>促销全案 + 无限修改</li>
+          <li>优先 24 小时交付</li>
+        </ul>
+        <a href="#cta" class="btn-liquid btn-glass" style="width: 100%; justify-content: center;">立即咨询</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <div class="container">
+    <h2 class="cta-h2" data-reveal>
+      不要让你的生意，<br>
+      输在一张 <span class="text-gold">"不好看"</span> <br>
+      的照片上。
+    </h2>
+    <p style="margin-bottom: 40px; opacity: 0.7;" data-reveal>
+      先试做，满意才谈合作，零风险。你点头，其他的我们搞掂！
+    </p>
+    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;" data-reveal>
+      <a href="https://wa.me/60142295317" class="btn-liquid btn-gold" style="font-size: 18px; padding: 20px 40px;">📱 WhatsApp 马上开始</a>
+      <a href="#" class="btn-liquid btn-glass">📘 Facebook 找我们</a>
+    </div>
+    <div style="margin-top: 60px; color: var(--muted); font-size: 14px;" data-reveal>
+      WhatsApp: 014-229 5317 | Instagram: @j1ed3sign.studio
+    </div>
+  </div>
+</section>
+
+<script>
+/* ─────────────────────────────────────
+   SMOOTH SCROLL (LENIS)
+───────────────────────────────────── */
+const lenis = new Lenis();
+function raf(time) {
+  lenis.raf(time);
+  requestAnimationFrame(raf);
+}
+requestAnimationFrame(raf);
+
+/* ─────────────────────────────────────
+   GSAP ANIMATIONS
+───────────────────────────────────── */
+gsap.registerPlugin(ScrollTrigger);
+
+// 导航栏滚动
+window.addEventListener('scroll', () => {
+  document.getElementById('main-nav').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// 元素揭示动画
+document.querySelectorAll('[data-reveal]').forEach(el => {
+  gsap.from(el, {
+    scrollTrigger: {
+      trigger: el,
+      start: "top 85%",
+      toggleActions: "play none none none"
+    },
+    y: 50,
+    opacity: 0,
+    duration: 1,
+    ease: "expo.out"
+  });
+});
+
+// Hero 特殊动画
+gsap.from(".hero-left h1", {
+  y: 100,
+  opacity: 0,
+  duration: 1.2,
+  ease: "expo.out",
+  delay: 0.2
+});
+
+gsap.from(".hero-right", {
+  x: 100,
+  opacity: 0,
+  duration: 1.2,
+  ease: "expo.out",
+  delay: 0.4
+});
+
+// Before/After Slider
+document.querySelectorAll('[data-slider]').forEach(wrap => {
+  const before = wrap.querySelector('.slider-before');
+  const handle = wrap.querySelector('.slider-handle');
+  let isDragging = false;
+
+  const move = (x) => {
+    const rect = wrap.getBoundingClientRect();
+    let pct = ((x - rect.left) / rect.width) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+    gsap.to(before, { clipPath: `inset(0 ${100 - pct}% 0 0)`, duration: 0.1 });
+    gsap.to(handle, { left: `${pct}%`, duration: 0.1 });
+  };
+
+  wrap.addEventListener('mousedown', () => isDragging = true);
+  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('mousemove', (e) => { if (isDragging) move(e.clientX); });
+  
+  wrap.addEventListener('touchstart', () => isDragging = true);
+  window.addEventListener('touchend', () => isDragging = false);
+  window.addEventListener('touchmove', (e) => { if (isDragging) move(e.touches[0].clientX); });
+});
+
+// 背景文字视差
+window.addEventListener('scroll', () => {
+  const scrolled = window.pageYOffset;
+  gsap.to(".hero-bg-text", {
+    y: scrolled * 0.3,
+    duration: 0.1
+  });
+});
+</script>
+</body>
+</html>
