@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J1ED3SIGN · 设计，让生意被看见</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Unbounded:wght@400;700;900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080806;--bg1:#0f0f0d;--bg2:#161614;--surface:#1c1c1a;
+  --gold:#c8a84b;--gold2:#e8c870;--goldDim:rgba(200,168,75,.12);
+  --cream:#f0ece0;--white:#fff;--muted:#62605a;
+  --red:#c84b4b;--green:#4bc87a;--teal:#3ab5c8;
+  --border:rgba(255,255,255,.055);
+  --r:16px;--max:1240px;--pad:clamp(24px,6vw,88px);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--cream);font-family:'Noto Sans SC',sans-serif;overflow-x:hidden;line-height:1.7;cursor:none}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:none;border:none;background:none}
+
+/* ── SCROLL PROGRESS ── */
+#prog{position:fixed;top:0;left:0;height:2px;background:linear-gradient(to right,var(--gold),var(--gold2));z-index:9999;width:0%;transition:width .08s linear;pointer-events:none}
+
+/* ── CUSTOM CURSOR ── */
+#cur{position:fixed;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(200,168,75,.5);pointer-events:none;z-index:9998;transition:transform .25s cubic-bezier(.22,1,.36,1),opacity .3s,width .3s,height .3s;transform:translate(-50%,-50%)}
+#cur-dot{position:fixed;width:5px;height:5px;border-radius:50%;background:var(--gold);pointer-events:none;z-index:9997;transform:translate(-50%,-50%);transition:transform .06s linear}
+body:has(a:hover) #cur,body:has(button:hover) #cur{width:60px;height:60px;background:var(--goldDim);border-color:var(--gold)}
+@media(max-width:1023px){#cur,#cur-dot{display:none}body{cursor:auto}button{cursor:pointer}}
+
+/* ── NOISE OVERLAY ── */
+.noise::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.25;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E")}
+
+/* ── LAYOUT HELPERS ── */
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
+.sec{padding:clamp(72px,10vw,140px) 0;position:relative}
+
+/* ── REVEAL SYSTEM ── */
+[data-r]{opacity:0;transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)}
+[data-r="up"]{transform:translateY(40px)}
+[data-r="left"]{transform:translateX(-40px)}
+[data-r="right"]{transform:translateX(40px)}
+[data-r="scale"]{transform:scale(.94)}
+[data-r].in{opacity:1;transform:none}
+.d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}.d4{transition-delay:.32s}.d5{transition-delay:.4s}
+
+/* ─────────────────────────────────────
+   NAV
+───────────────────────────────────── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  background:rgba(8,8,6,.82);backdrop-filter:blur(24px) saturate(160%);
+  border-bottom:1px solid var(--border);
+}
+.nav-in{
+  max-width:var(--max);margin:0 auto;padding:0 var(--pad);
+  height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.logo{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:900;letter-spacing:-.5px;color:var(--white)}
+.logo em{color:var(--gold);font-style:normal}
+.nav-links{display:none;align-items:center;gap:32px}
+.nav-links a{font-size:12px;letter-spacing:.5px;color:rgba(255,255,255,.4);transition:color .2s}
+.nav-links a:hover{color:var(--cream)}
+
+/* LIQUID GLASS NAV CTA */
+.nav-btn{
+  font-size:12px;font-weight:700;letter-spacing:.6px;
+  padding:9px 20px;border-radius:100px;
+  background:rgba(200,168,75,.14);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(200,168,75,.32);
+  color:var(--gold2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 20px rgba(200,168,75,.1);
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+  position:relative;overflow:hidden;
+}
+.nav-btn::after{content:'';position:absolute;top:-50%;left:-70%;width:40%;height:200%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.1) 50%,transparent 60%);transform:skewX(-15deg);transition:left .5s ease}
+.nav-btn:hover{background:rgba(200,168,75,.22);border-color:rgba(200,168,75,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 32px rgba(200,168,75,.18);color:var(--white)}
+.nav-btn:hover::after{left:120%}
+
+/* ─────────────────────────────────────
+   HERO
+───────────────────────────────────── */
+.hero{
+  min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;
+  padding-top:100px;padding-bottom:clamp(52px,8vw,100px);
+  padding-left:var(--pad);padding-right:var(--pad);
+  position:relative;overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 70% 20%,rgba(200,168,75,.055),transparent 60%),
+             radial-gradient(ellipse 60% 50% at 10% 80%,rgba(58,181,200,.04),transparent 60%);
+}
+.hero-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(200,168,75,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,75,.03) 1px,transparent 1px);
+  background-size:70px 70px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 30%,black 30%,transparent 100%);
+}
+/* Floating particles */
+.hero-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.p-dot{position:absolute;border-radius:50%;background:var(--gold);animation:pFloat linear infinite}
+@keyframes pFloat{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:.3}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+
+.hero-content{
+  position:relative;z-index:2;
+  max-width:var(--max);margin:0 auto;width:100%;
+}
+
+/* Eyebrow tag */
+.hero-tag{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);
+  margin-bottom:clamp(24px,4vw,48px);
+  opacity:0;animation:fadeSlideUp .8s .2s cubic-bezier(.22,1,.36,1) forwards;
+}
+.hero-pulse{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(200,168,75,.5)}50%{opacity:.3;box-shadow:0 0 0 6px rgba(200,168,75,0)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* HERO TITLE — editorial split layout */
+.hero-h1{
+  font-family:'Unbounded',sans-serif;
+  font-weight:900;line-height:.96;letter-spacing:-2.5px;
+  color:var(--white);
+  margin-bottom:clamp(20px,3vw,32px);
+}
+.hero-h1 .line1{
+  font-size:clamp(14px,2vw,18px);font-weight:400;letter-spacing:2px;
+  color:rgba(255,255,255,.3);font-family:'Noto Sans SC',sans-serif;
+  display:block;margin-bottom:8px;
+  opacity:0;animation:fadeSlideUp .8s .3s cubic-bezier(.22,1,.36,1) forwards;
+}
+.hero-h1 .big{
+  font-size:clamp(52px,11vw,120px);display:block;
+  opacity:0;animation:fadeSlideUp .9s .42s cubic-bezier(.22,1,.36,1) forwards;
+}
+.hero-h1 .big2{
+  font-size:clamp(48px,10vw,108px);display:block;
+  color:var(--gold);
+  opacity:0;animation:fadeSlideUp .9s .54s cubic-bezier(.22,1,.36,1) forwards;
+  position:relative;
+}
+.hero-h1 .big2::before{
+  content:'被看见';position:absolute;color:rgba(200,168,75,.07);
+  font-size:1.6em;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;white-space:nowrap;z-index:-1;
+}
+
+/* Hero sub / cta row */
+.hero-row{
+  display:flex;flex-direction:column;gap:clamp(24px,4vw,40px);
+  opacity:0;animation:fadeSlideUp .9s .7s cubic-bezier(.22,1,.36,1) forwards;
+}
+.hero-sub{
+  font-family:'Lora',serif;font-style:italic;
+  font-size:clamp(15px,2vw,20px);
+  color:rgba(255,255,255,.38);
+  line-height:1.6;max-width:380px;
+}
+.hero-sub em{color:rgba(255,255,255,.7);font-style:normal;font-weight:600}
+.hero-btns{display:flex;flex-wrap:wrap;gap:12px}
+
+/* PRIMARY BUTTON */
+.btn-gold{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--gold);color:var(--bg);
+  font-weight:700;font-size:14px;letter-spacing:.3px;
+  padding:16px 28px;border-radius:100px;
+  box-shadow:0 8px 32px rgba(200,168,75,.3);
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+  position:relative;overflow:hidden;
+}
+.btn-gold::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.18) 50%,transparent 60%);transform:translateX(-100%) skewX(-15deg);transition:transform .5s ease}
+.btn-gold:hover{background:var(--gold2);box-shadow:0 12px 48px rgba(200,168,75,.42);transform:translateY(-2px)}
+.btn-gold:hover::after{transform:translateX(200%) skewX(-15deg)}
+
+/* LIQUID GLASS BUTTON */
+.btn-glass{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:14px;font-weight:600;
+  padding:15px 26px;border-radius:100px;
+  color:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.055);
+  backdrop-filter:blur(24px) saturate(160%);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 24px rgba(0,0,0,.25);
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+  position:relative;overflow:hidden;
+}
+.btn-glass::after{content:'';position:absolute;top:-50%;left:-70%;width:40%;height:200%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.08) 50%,transparent 60%);transform:skewX(-15deg);transition:left .5s ease}
+.btn-glass:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.85);transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 8px 32px rgba(0,0,0,.3)}
+.btn-glass:hover::after{left:120%}
+
+/* Hero stats */
+.hero-stats{
+  display:flex;align-items:center;gap:0;
+  margin-top:clamp(36px,6vw,72px);padding-top:clamp(28px,4vw,44px);
+  border-top:1px solid var(--border);
+  opacity:0;animation:fadeSlideUp .9s .9s cubic-bezier(.22,1,.36,1) forwards;
+}
+.h-stat{flex:1;text-align:center;padding:0 clamp(8px,2vw,24px)}
+.h-stat+.h-stat{border-left:1px solid var(--border)}
+.h-num{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(24px,4.5vw,44px);font-weight:900;
+  color:var(--white);line-height:1;margin-bottom:6px;
+}
+.h-num .accent{color:var(--gold)}
+.h-label{font-size:11px;color:var(--muted);letter-spacing:.5px}
+
+/* HERO SCROLL INDICATOR */
+.hero-scroll{
+  position:absolute;bottom:clamp(28px,5vw,52px);right:var(--pad);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  opacity:0;animation:fadeSlideUp 1s 1.1s ease forwards;
+}
+.scroll-line{width:1px;height:52px;background:linear-gradient(to bottom,var(--gold),transparent)}
+.scroll-txt{font-size:9px;letter-spacing:3.5px;text-transform:uppercase;color:var(--muted);writing-mode:vertical-rl}
+
+/* ─────────────────────────────────────
+   PAIN SECTION
+───────────────────────────────────── */
+.pain{background:var(--bg1)}
+
+/* Creative asymmetric title */
+.pain-title-wrap{
+  display:flex;flex-direction:column;margin-bottom:clamp(48px,7vw,96px);
+}
+.pain-overline{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold);display:flex;align-items:center;gap:12px;
+  margin-bottom:16px;
+}
+.pain-overline::before{content:'';display:block;width:28px;height:1px;background:var(--gold)}
+.pain-main-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(32px,7vw,88px);line-height:.95;letter-spacing:-2px;
+  color:var(--white);
+}
+.pain-main-title .muted-line{
+  font-size:clamp(18px,4vw,44px);color:rgba(255,255,255,.2);
+  display:block;letter-spacing:-1px;
+}
+.pain-main-title .gold-line{color:var(--gold);display:block}
+
+.pain-stat-bar{
+  background:var(--goldDim);border:1px solid rgba(200,168,75,.2);
+  border-radius:12px;padding:20px 24px;
+  margin-bottom:36px;
+  font-size:14px;line-height:1.9;color:rgba(255,255,255,.55);
+}
+.pain-stat-bar strong{color:var(--cream);font-weight:700}
+.pain-stat-bar .num{font-family:'Unbounded',sans-serif;color:var(--gold);font-size:1.15em;font-weight:900}
+
+/* Pain cards */
+.pain-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.pain-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:24px;
+  display:flex;gap:18px;align-items:flex-start;
+  position:relative;overflow:hidden;
+  transition:border-color .3s,transform .3s;
+}
+.pain-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(200,168,75,.04),transparent 50%);opacity:0;transition:opacity .3s}
+.pain-card:hover{border-color:rgba(200,168,75,.25);transform:translateY(-3px)}
+.pain-card:hover::before{opacity:1}
+.pain-card-num{
+  font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;
+  color:var(--gold);letter-spacing:2px;flex-shrink:0;padding-top:2px;opacity:.6;
+}
+.pain-body{}
+.pain-heading{font-size:15px;font-weight:700;color:var(--cream);margin-bottom:6px;line-height:1.3}
+.pain-text{font-size:13px;color:var(--muted);line-height:1.75}
+
+.pain-truth{
+  margin-top:clamp(36px,5vw,64px);
+  padding:clamp(28px,5vw,52px);
+  border-radius:20px;
+  background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(200,168,75,.08),transparent);
+  border:1px solid rgba(200,168,75,.18);
+  text-align:center;
+}
+.truth-quote{
+  font-family:'Lora',serif;font-style:italic;
+  font-size:clamp(16px,2.5vw,24px);color:rgba(255,255,255,.75);
+  line-height:1.65;margin-bottom:16px;
+}
+.truth-quote strong{color:var(--gold);font-style:normal}
+.truth-sub{font-size:12px;color:var(--muted);letter-spacing:.5px}
+
+/* ─────────────────────────────────────
+   DATA PROOF
+───────────────────────────────────── */
+.data{background:var(--bg2);overflow:hidden;position:relative}
+.data-bg-txt{
+  position:absolute;bottom:-0.05em;right:-0.05em;
+  font-family:'Unbounded',sans-serif;font-size:clamp(100px,22vw,260px);
+  font-weight:900;color:rgba(200,168,75,.03);line-height:1;
+  pointer-events:none;letter-spacing:-5px;
+  user-select:none;
+}
+
+/* Data overline */
+.sec-eyebrow{
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold);display:flex;align-items:center;gap:12px;
+  margin-bottom:clamp(16px,3vw,28px);
+}
+.sec-eyebrow::before{content:'';display:block;width:28px;height:1px;background:var(--gold)}
+
+.data-grid{display:grid;grid-template-columns:1fr;gap:clamp(28px,5vw,64px);margin-bottom:clamp(36px,6vw,72px)}
+.data-item{}
+.data-num{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(52px,12vw,96px);line-height:1;letter-spacing:-3px;
+  color:var(--gold);margin-bottom:12px;
+  position:relative;display:inline-block;
+}
+.data-num::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(to right,var(--gold),transparent)}
+.data-label{font-size:clamp(15px,2vw,18px);font-weight:700;color:var(--white);margin-bottom:8px}
+.data-desc{font-size:13px;color:var(--muted);line-height:1.75;max-width:340px}
+
+.data-cta-truth{
+  background:var(--surface);border-radius:var(--r);
+  padding:clamp(24px,4vw,44px);
+  border-left:3px solid var(--gold);
+}
+.data-truth-title{
+  font-family:'Lora',serif;font-style:italic;
+  font-size:clamp(16px,2vw,22px);color:var(--cream);
+  margin-bottom:10px;line-height:1.6;
+}
+.data-truth-sub{font-size:13px;color:var(--muted)}
+.data-truth-sub strong{color:var(--gold)}
+
+/* ─────────────────────────────────────
+   BEFORE / AFTER — CASES
+───────────────────────────────────── */
+.cases{background:var(--bg1)}
+
+.cases-hdr{margin-bottom:clamp(48px,7vw,88px)}
+.cases-title-wrap{
+  display:flex;flex-direction:column;gap:8px;
+  position:relative;
+}
+.cases-big{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(40px,9vw,96px);line-height:.95;letter-spacing:-2.5px;
+  color:var(--white);
+}
+.cases-big .stroke{-webkit-text-stroke:1px rgba(255,255,255,.15);color:transparent}
+.cases-big .gold{color:var(--gold)}
+
+.cases-hint{
+  display:inline-flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.05);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.1);border-radius:100px;
+  padding:8px 16px;font-size:12px;color:rgba(255,255,255,.5);
+  margin-top:20px;align-self:flex-start;
+}
+
+.cases-grid{display:flex;flex-direction:column;gap:20px}
+
+/* CASE CARD */
+.case{
+  border-radius:20px;overflow:hidden;
+  border:1px solid var(--border);background:var(--bg2);
+  transition:border-color .3s;
+}
+.case:hover{border-color:rgba(200,168,75,.2)}
+
+.case-header{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 20px;border-bottom:1px solid var(--border);
+}
+.case-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.case-meta{flex:1;min-width:0}
+.case-cat{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.case-name{font-size:14px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.case-tag{
+  font-size:10px;font-weight:700;
+  padding:4px 11px;border-radius:100px;
+  background:rgba(75,200,122,.1);color:var(--green);
+  border:1px solid rgba(75,200,122,.2);
+  white-space:nowrap;flex-shrink:0;
+}
+
+/* SLIDER — redesigned */
+.slider{
+  position:relative;width:100%;
+  aspect-ratio:4/3;
+  overflow:hidden;cursor:none;
+  user-select:none;-webkit-user-select:none;touch-action:none;
+  background:var(--bg);
+}
+@media(max-width:1023px){.slider{cursor:pointer}}
+.s-layer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.s-front{clip-path:inset(0 50% 0 0);will-change:clip-path}
+.s-lbl{
+  position:absolute;z-index:8;
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:5px 11px;border-radius:5px;pointer-events:none;
+  bottom:12px;
+}
+.s-lbl-b{left:12px;background:rgba(0,0,0,.65);color:rgba(255,255,255,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1)}
+.s-lbl-a{right:12px;background:rgba(200,168,75,.9);color:var(--bg);font-weight:800}
+.s-divider{
+  position:absolute;top:0;bottom:0;left:50%;z-index:10;
+  width:2px;background:rgba(255,255,255,.9);
+  box-shadow:0 0 16px rgba(0,0,0,.5);
+  transform:translateX(-50%);will-change:left;pointer-events:none;
+}
+.s-handle{
+  position:absolute;top:50%;left:50%;z-index:11;
+  transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:50%;
+  background:var(--white);
+  box-shadow:0 4px 24px rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.s-arrows{
+  display:flex;align-items:center;gap:2px;
+  font-size:11px;color:var(--bg);font-weight:900;
+}
+
+.case-metrics{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--border);
+}
+.c-m{text-align:center;padding:14px 8px}
+.c-m+.c-m{border-left:1px solid var(--border)}
+.c-m-num{
+  font-family:'Unbounded',sans-serif;font-size:14px;font-weight:700;
+  margin-bottom:3px;
+}
+.c-m-num.was{color:var(--muted);text-decoration:line-through;font-size:12px}
+.c-m-num.now{color:var(--green)}
+.c-m-num.price{color:var(--gold)}
+.c-m-lbl{font-size:9px;color:var(--muted);letter-spacing:.3px}
+
+/* MOCK DESIGNS */
+.mock-b{
+  width:100%;height:100%;
+  background:#e8e4da;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:24px;
+}
+.mb-frame{
+  width:56%;aspect-ratio:1;border-radius:8px;
+  background:linear-gradient(135deg,#ccc8be,#b8b2a5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;border:1.5px dashed #bab3a5;
+  position:relative;
+}
+.mb-bbl{
+  position:absolute;top:6px;left:6px;
+  background:rgba(200,50,50,.85);color:#fff;
+  font-size:7px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  padding:2px 7px;border-radius:3px;
+}
+.mb-cap{
+  font-size:11px;color:#999;text-align:center;line-height:1.6;
+  font-family:'Noto Sans SC',sans-serif;
+}
+
+.mock-a{width:100%;height:100%;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:hidden}
+.ma1{background:linear-gradient(145deg,#180828,#3d1070 55%,#8a1888)}
+.ma1 .glow{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(200,168,75,.2),transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%)}
+.ma1 .tag{background:var(--gold);color:#180828;font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:3px 12px;border-radius:4px;z-index:2;margin-bottom:10px}
+.ma1 .hl{font-family:'Unbounded',sans-serif;font-size:clamp(16px,4vw,22px);font-weight:900;color:#fff;text-align:center;line-height:1;z-index:2;margin-bottom:4px}
+.ma1 .sub{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);z-index:2;margin-bottom:12px}
+.ma1 .em{font-size:clamp(44px,10vw,64px);z-index:2;animation:floaty 3.5s ease-in-out infinite;margin-bottom:12px}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.ma1 .pbox{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(8px);border-radius:50px;padding:8px 20px;display:flex;align-items:center;gap:12px;z-index:2}
+.ma1 .pr{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:900;color:var(--gold)}
+.ma1 .st{font-size:11px;color:var(--gold)}
+
+.ma2{background:#fff8f0}
+.ma2 .big{font-family:'Unbounded',sans-serif;font-size:clamp(50px,13vw,80px);font-weight:900;color:#c85a10;line-height:.9;text-align:center;margin-bottom:4px}
+.ma2 .s1{font-size:13px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:3px}
+.ma2 .s2{font-size:10px;color:#aaa;text-align:center;margin-bottom:14px}
+.ma2 .c1{position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,160,60,.1);pointer-events:none}
+.ma2 .c2{position:absolute;bottom:-25px;left:-25px;width:100px;height:100px;border-radius:50%;background:rgba(200,90,16,.07);pointer-events:none}
+.ma2 .em2{font-size:44px;margin-bottom:12px}
+.ma2 .cta{background:#c85a10;color:#fff;font-weight:800;font-size:12px;padding:10px 24px;border-radius:50px;box-shadow:0 8px 24px rgba(200,90,16,.35)}
+
+.ma3{background:#080808;padding:0;justify-content:flex-end;align-items:stretch}
+.ma3-top{flex:1;background:linear-gradient(180deg,#1a1a16,#242420);display:flex;align-items:center;justify-content:center;font-size:clamp(56px,14vw,88px);position:relative}
+.ma3-top::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,#080808)}
+.ma3-bot{padding:14px 16px 16px}
+.ma3-tag{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.ma3-hl{font-family:'Unbounded',sans-serif;font-size:clamp(13px,3.5vw,18px);font-weight:700;color:#fff;line-height:1.1;margin-bottom:12px}
+.ma3-row{display:flex;align-items:center;justify-content:space-between}
+.ma3-pr{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;color:var(--gold)}
+.ma3-btn{background:var(--gold);color:#080808;font-size:10px;font-weight:700;padding:7px 14px;border-radius:7px}
+
+.ma4{background:linear-gradient(155deg,#060e18,#0e2030 50%,#061828);align-items:flex-start}
+.ma4-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(100,200,220,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(100,200,220,.022) 1px,transparent 1px);background-size:26px 26px}
+.ma4-tag{display:inline-flex;background:rgba(100,200,220,.1);border:1px solid rgba(100,200,220,.22);color:#64c8dc;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:4px;margin-bottom:14px}
+.ma4-hl{font-family:'Unbounded',sans-serif;font-size:clamp(14px,4vw,20px);font-weight:700;color:#fff;line-height:1.2;margin-bottom:16px}
+.ma4-hl span{color:#64c8dc}
+.ma4-steps{display:flex;flex-direction:column;gap:8px;width:100%}
+.ma4-step{display:flex;align-items:center;gap:10px;font-size:11px;color:rgba(255,255,255,.7)}
+.ma4-num{width:22px;height:22px;border-radius:50%;background:rgba(100,200,220,.1);border:1px solid rgba(100,200,220,.28);color:#64c8dc;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ma4-div{height:1px;background:rgba(255,255,255,.05);width:100%;margin-top:12px}
+.ma4-foot{margin-top:10px;font-size:10px;color:rgba(255,255,255,.25)}
+.ma4-foot strong{color:#64c8dc}
+
+.ma5{background:linear-gradient(145deg,#1a1000,#3a2200 50%,#5a3408)}
+.ma5-stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ma5-star{position:absolute;border-radius:50%;background:var(--gold);animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.1}50%{opacity:.5}}
+.ma5-badge{background:var(--gold);color:#1a1000;font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;padding:3px 14px;border-radius:4px;margin-bottom:12px;z-index:2}
+.ma5-em{font-size:clamp(44px,10vw,60px);z-index:2;margin-bottom:10px}
+.ma5-hl{font-family:'Unbounded',sans-serif;font-size:clamp(16px,4vw,22px);font-weight:700;color:#fff;text-align:center;line-height:1.1;z-index:2;margin-bottom:8px}
+.ma5-sub{font-size:10px;color:rgba(255,255,255,.45);text-align:center;z-index:2;margin-bottom:14px}
+.ma5-cta{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:50px;padding:8px 20px;font-size:11px;color:#fff;font-weight:600;z-index:2}
+
+/* ─────────────────────────────────────
+   TRANSFORMATION — BEFORE/AFTER LIST
+───────────────────────────────────── */
+.transform{background:var(--bg2)}
+
+.transform-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(28px,6vw,72px);line-height:.95;letter-spacing:-2px;
+  color:var(--white);margin-bottom:clamp(36px,6vw,72px);
+}
+.transform-title .hl{color:var(--gold)}
+.transform-title .sm{font-size:clamp(16px,3vw,32px);color:rgba(255,255,255,.22);display:block;margin-bottom:4px;letter-spacing:-1px}
+
+.transform-cards{display:grid;grid-template-columns:1fr;gap:16px}
+
+.t-card{border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.t-card-hdr{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+}
+.t-card-hdr.bad{background:rgba(200,75,75,.06);color:rgba(200,75,75,.8);border-bottom-color:rgba(200,75,75,.12)}
+.t-card-hdr.good{background:rgba(75,200,122,.06);color:rgba(75,200,122,.9);border-bottom-color:rgba(75,200,122,.12)}
+.t-card-icon{font-size:14px}
+.t-card-body{background:var(--surface);padding:20px}
+.t-item{display:flex;align-items:flex-start;gap:12px;font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.t-item:last-child{border-bottom:none}
+.t-item .ico{font-size:14px;flex-shrink:0;margin-top:1px}
+
+.transform-truth{
+  margin-top:clamp(28px,5vw,56px);
+  text-align:center;
+  font-family:'Lora',serif;font-style:italic;
+  font-size:clamp(14px,2vw,18px);color:rgba(255,255,255,.4);
+  line-height:1.7;
+}
+.transform-truth strong{color:var(--gold);font-style:normal;font-weight:700}
+
+/* ─────────────────────────────────────
+   SERVICES
+───────────────────────────────────── */
+.services{background:var(--bg1)}
+
+.svc-header{margin-bottom:clamp(36px,6vw,72px)}
+.svc-title-main{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(30px,6vw,72px);line-height:.95;letter-spacing:-2px;
+  color:var(--white);
+}
+.svc-title-main .light{color:rgba(255,255,255,.22)}
+.svc-title-sub{
+  font-family:'Lora',serif;font-style:italic;
+  font-size:clamp(14px,2vw,18px);color:var(--gold);
+  margin-top:16px;max-width:480px;
+}
+
+/* Service items — numbered editorial rows */
+.svc-list{display:flex;flex-direction:column;gap:0}
+.svc-item{
+  display:flex;flex-direction:column;gap:20px;
+  padding:clamp(28px,5vw,52px) 0;
+  border-top:1px solid var(--border);
+  position:relative;
+}
+.svc-item:last-child{border-bottom:1px solid var(--border)}
+.svc-top-row{display:flex;align-items:flex-start;gap:20px;justify-content:space-between}
+.svc-big-num{
+  font-family:'Unbounded',sans-serif;
+  font-size:clamp(48px,10vw,100px);font-weight:900;line-height:1;
+  color:rgba(200,168,75,.07);flex-shrink:0;
+  letter-spacing:-3px;
+}
+.svc-icon{font-size:28px;margin-bottom:10px}
+.svc-name{
+  font-family:'Unbounded',sans-serif;font-size:clamp(16px,3vw,26px);font-weight:700;
+  color:var(--white);line-height:1.1;margin-bottom:10px;letter-spacing:-.5px;
+}
+.svc-desc{font-size:14px;color:var(--muted);line-height:1.8;max-width:520px}
+.svc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.svc-chip{
+  font-size:11px;color:var(--gold);
+  background:var(--goldDim);border:1px solid rgba(200,168,75,.22);
+  padding:5px 12px;border-radius:100px;
+  display:flex;align-items:center;gap:5px;
+}
+.svc-chip::before{content:'✓';font-weight:700}
+
+/* ─────────────────────────────────────
+   PRICING
+───────────────────────────────────── */
+.pricing{background:var(--bg2)}
+
+.price-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(28px,6vw,64px);line-height:.95;letter-spacing:-2px;
+  color:var(--white);margin-bottom:12px;
+}
+.price-subtitle{
+  font-family:'Lora',serif;font-style:italic;
+  font-size:clamp(14px,2vw,18px);color:var(--gold);
+  margin-bottom:clamp(36px,6vw,72px);
+}
+
+.price-grid{display:grid;grid-template-columns:1fr;gap:14px}
+
+/* Pricing cards */
+.p-card{
+  border-radius:20px;padding:clamp(24px,4vw,40px);
+  position:relative;overflow:hidden;
+  transition:transform .3s;
+}
+.p-card:hover{transform:translateY(-4px)}
+.p-card.basic{background:var(--surface);border:1px solid var(--border)}
+.p-card.pro{
+  background:var(--bg);
+  border:1.5px solid var(--gold);
+  box-shadow:0 0 60px rgba(200,168,75,.12),0 16px 64px rgba(0,0,0,.4);
+}
+.p-card.premium{background:var(--surface);border:1px solid var(--border)}
+
+/* Animated gold border on pro */
+.p-card.pro::before{
+  content:'';position:absolute;inset:-1.5px;border-radius:21px;
+  background:conic-gradient(from 0deg,var(--gold),var(--gold2),var(--gold),transparent,transparent,var(--gold));
+  z-index:-1;animation:spin 4s linear infinite;opacity:.4;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.p-badge{
+  position:absolute;top:-1px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:var(--bg);
+  font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  padding:5px 18px;border-radius:0 0 12px 12px;white-space:nowrap;
+}
+.p-tier{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.p-card.pro .p-tier{color:var(--gold)}
+.p-amount{
+  font-family:'Unbounded',sans-serif;font-size:clamp(36px,7vw,56px);font-weight:900;
+  line-height:1;margin-bottom:4px;color:var(--white);
+}
+.p-period{font-size:12px;color:var(--muted);margin-bottom:24px}
+.p-divider{height:1px;background:var(--border);margin-bottom:20px}
+.p-feats{display:flex;flex-direction:column;gap:9px}
+.p-f{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:rgba(255,255,255,.6)}
+.p-f .ck{color:var(--green);flex-shrink:0;font-weight:700;font-size:14px}
+.p-f .cr{color:rgba(255,255,255,.2);flex-shrink:0}
+.p-note{margin-top:20px;font-size:11px;color:var(--muted);font-style:italic;padding-top:16px;border-top:1px solid var(--border)}
+
+/* Pricing footer note */
+.price-footer{
+  margin-top:clamp(28px,4vw,52px);
+  background:var(--goldDim);border:1px solid rgba(200,168,75,.2);
+  border-radius:var(--r);padding:24px;
+  display:grid;grid-template-columns:1fr;gap:12px;
+}
+.pf-item{display:flex;align-items:flex-start;gap:12px;font-size:13px;color:rgba(255,255,255,.55)}
+.pf-item .ico{font-size:16px;flex-shrink:0}
+
+.price-cta-pair{display:flex;flex-direction:column;gap:12px;margin-top:clamp(28px,4vw,48px)}
+
+/* ─────────────────────────────────────
+   PROCESS
+───────────────────────────────────── */
+.process{background:var(--bg1)}
+
+.proc-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(28px,6vw,64px);line-height:.95;letter-spacing:-2px;
+  color:var(--white);margin-bottom:clamp(36px,6vw,72px);
+}
+.proc-title .dim{color:rgba(255,255,255,.18)}
+
+.proc-steps{display:flex;flex-direction:column;gap:0;position:relative}
+.proc-steps::before{
+  content:'';position:absolute;left:20px;top:20px;bottom:20px;width:1px;
+  background:linear-gradient(to bottom,var(--gold),rgba(200,168,75,.05));
+  pointer-events:none;
+}
+.proc-step{display:flex;gap:24px;padding:clamp(20px,4vw,36px) 0;border-bottom:1px solid var(--border)}
+.proc-step:last-child{border-bottom:none}
+.proc-dot{
+  width:42px;height:42px;border-radius:50%;
+  background:var(--gold);color:var(--bg);
+  font-weight:900;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;z-index:2;position:relative;
+  box-shadow:0 0 0 8px rgba(200,168,75,.08);
+}
+.proc-body{padding-top:8px}
+.proc-title-txt{font-size:clamp(14px,2vw,17px);font-weight:700;color:var(--white);margin-bottom:5px}
+.proc-time{font-size:10px;color:var(--gold);letter-spacing:1px;margin-bottom:8px}
+.proc-desc{font-size:13px;color:var(--muted);line-height:1.75}
+.proc-bullets{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+.proc-bul{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.55)}
+.proc-bul::before{content:'→';color:var(--gold);font-size:11px;flex-shrink:0}
+
+/* ─────────────────────────────────────
+   TESTIMONIALS / TRUST
+───────────────────────────────────── */
+.trust{background:var(--bg2)}
+
+.trust-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(28px,5vw,56px);line-height:.95;letter-spacing:-2px;
+  color:var(--white);margin-bottom:clamp(36px,6vw,72px);
+}
+.trust-title .ital{font-family:'Lora',serif;font-style:italic;font-weight:400;color:var(--gold);font-size:.7em;display:block;letter-spacing:0;margin-bottom:8px}
+
+/* Screenshot placeholder */
+.screenshot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:clamp(28px,5vw,56px)}
+.ss-card{
+  border-radius:14px;overflow:hidden;aspect-ratio:4/5;
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:20px;text-align:center;
+}
+.ss-icon{font-size:28px}
+.ss-txt{font-size:11px;color:var(--muted);line-height:1.5}
+.ss-badge{
+  font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  background:var(--goldDim);border:1px solid rgba(200,168,75,.2);color:var(--gold);
+  padding:3px 10px;border-radius:100px;
+}
+
+.t-quote-block{
+  background:var(--surface);border:1px solid rgba(200,168,75,.18);
+  border-radius:20px;padding:clamp(24px,4vw,44px);
+  position:relative;
+}
+.t-quote-block::before{
+  content:'"';
+  position:absolute;top:-0.2em;left:20px;
+  font-family:'Lora',serif;font-size:120px;line-height:1;
+  color:rgba(200,168,75,.08);pointer-events:none;
+}
+.t-stars{color:var(--gold);font-size:13px;letter-spacing:2px;margin-bottom:14px}
+.t-text{
+  font-family:'Lora',serif;font-style:italic;
+  font-size:clamp(14px,2vw,18px);color:rgba(255,255,255,.72);
+  line-height:1.7;margin-bottom:18px;position:relative;z-index:1;
+}
+.t-by{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.t-by::before{content:'';display:block;width:22px;height:1px;background:var(--gold);flex-shrink:0}
+
+/* Trust grid */
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:clamp(28px,5vw,56px)}
+.tr-card{
+  background:rgba(255,255,255,.025);border:1px solid var(--border);
+  border-radius:14px;padding:20px;
+  transition:border-color .25s,transform .25s;
+}
+.tr-card:hover{border-color:rgba(200,168,75,.2);transform:translateY(-2px)}
+.tr-icon{font-size:24px;margin-bottom:10px}
+.tr-title{font-size:13px;font-weight:700;color:var(--cream);margin-bottom:6px}
+.tr-txt{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ─────────────────────────────────────
+   FAQ
+───────────────────────────────────── */
+.faq{background:var(--bg1)}
+
+.faq-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(28px,5vw,64px);line-height:.95;letter-spacing:-2px;
+  color:var(--white);margin-bottom:clamp(36px,5vw,72px);
+}
+.faq-title .dim{color:rgba(255,255,255,.18)}
+.faq-title .gold{color:var(--gold)}
+
+.faq-list{display:flex;flex-direction:column;gap:8px}
+.faq-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;
+  transition:border-color .25s;
+}
+.faq-item:hover,.faq-item.open{border-color:rgba(200,168,75,.22)}
+.faq-q{
+  width:100%;padding:20px 22px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  font-size:14px;font-weight:600;color:var(--cream);
+  cursor:pointer;text-align:left;
+}
+.faq-ico{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:var(--goldDim);border:1px solid rgba(200,168,75,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--gold);transition:transform .3s,background .2s;
+}
+.faq-item.open .faq-ico{transform:rotate(45deg);background:rgba(200,168,75,.2)}
+.faq-a{
+  font-size:13px;color:var(--muted);line-height:1.8;
+  padding:0 22px;max-height:0;overflow:hidden;
+  transition:max-height .4s ease,padding .3s;
+}
+.faq-item.open .faq-a{max-height:320px;padding:0 22px 20px}
+
+/* ─────────────────────────────────────
+   FINAL CTA
+───────────────────────────────────── */
+.cta{
+  background:var(--bg);padding:clamp(80px,14vw,160px) 0;
+  position:relative;overflow:hidden;text-align:center;
+}
+.cta-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 50%,rgba(200,168,75,.07),transparent 70%),
+    linear-gradient(rgba(200,168,75,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(200,168,75,.025) 1px,transparent 1px);
+  background-size:auto,60px 60px,60px 60px;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black,transparent);
+}
+
+.cta-eyebrow{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;position:relative;z-index:2}
+.cta-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(30px,8vw,88px);line-height:.95;letter-spacing:-2.5px;
+  color:var(--white);margin-bottom:20px;position:relative;z-index:2;
+}
+.cta-title .gold{color:var(--gold)}
+.cta-title .dim{color:rgba(255,255,255,.2)}
+.cta-sub{
+  font-size:clamp(14px,1.8vw,18px);color:rgba(255,255,255,.38);
+  max-width:480px;margin:0 auto 40px;line-height:1.8;
+  position:relative;z-index:2;
+}
+.cta-sub em{color:rgba(255,255,255,.65);font-style:normal;font-weight:600}
+
+.cta-btns{display:flex;flex-direction:column;gap:12px;margin-bottom:clamp(40px,6vw,72px);position:relative;z-index:2}
+
+/* MAGNETIC BUTTON WRAPPER */
+.magnetic{display:inline-block;transition:transform .4s cubic-bezier(.22,1,.36,1)}
+
+.btn-wa{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  background:var(--gold);color:var(--bg);
+  font-weight:700;font-size:16px;letter-spacing:.2px;
+  padding:18px 36px;border-radius:100px;
+  box-shadow:0 8px 40px rgba(200,168,75,.35);
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+  position:relative;overflow:hidden;
+}
+.btn-wa::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.2) 50%,transparent 60%);transform:translateX(-100%) skewX(-15deg);transition:transform .5s ease}
+.btn-wa:hover{background:var(--gold2);box-shadow:0 14px 56px rgba(200,168,75,.5);transform:translateY(-2px)}
+.btn-wa:hover::after{transform:translateX(200%) skewX(-15deg)}
+
+.btn-fb{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  font-size:15px;font-weight:600;
+  padding:17px 34px;border-radius:100px;
+  color:rgba(255,255,255,.6);
+  background:rgba(255,255,255,.05);
+  backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 24px rgba(0,0,0,.3);
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+}
+.btn-fb:hover{background:rgba(255,255,255,.09);color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.18);transform:translateY(-2px)}
+
+/* Contacts */
+.cta-contacts{position:relative;z-index:2}
+.cta-contact-hdr{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.18);margin-bottom:18px}
+.cta-contact-row{display:flex;flex-direction:column;gap:10px;align-items:center}
+.c-item{display:flex;align-items:center;gap:10px;font-size:14px;color:rgba(255,255,255,.4)}
+.c-item strong{color:rgba(255,255,255,.7)}
+
+/* ─────────────────────────────────────
+   SEPARATOR
+───────────────────────────────────── */
+.sep{height:1px;background:linear-gradient(to right,transparent,rgba(255,255,255,.06),transparent)}
+
+/* ─────────────────────────────────────
+   MOBILE SWIPE BANNER
+───────────────────────────────────── */
+.swipe-banner{
+  position:fixed;bottom:0;left:0;right:0;z-index:400;
+  padding:13px 18px;
+  background:rgba(8,8,6,.92);backdrop-filter:blur(16px);
+  border-top:1px solid rgba(200,168,75,.22);
+  display:flex;align-items:center;gap:12px;
+  transform:translateY(0);transition:transform .4s ease;
+}
+.swipe-banner.gone{transform:translateY(110%)}
+.sb-text{font-size:12px;color:rgba(255,255,255,.5);flex:1;line-height:1.4}
+.sb-text strong{color:var(--gold)}
+.sb-close{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.35);
+  font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* ─────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────── */
+@media(min-width:768px){
+  .nav-links{display:flex}
+  .hero-row{flex-direction:row;align-items:flex-end}
+  .hero-sub{margin-bottom:0}
+  .pain-grid{grid-template-columns:1fr 1fr}
+  .data-grid{grid-template-columns:repeat(3,1fr)}
+  .cases-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .cases-grid .case:last-child{grid-column:1/-1;max-width:560px;margin:0 auto;width:100%}
+  .transform-cards{grid-template-columns:1fr 1fr}
+  .price-grid{grid-template-columns:repeat(3,1fr);align-items:start}
+  .trust-grid{grid-template-columns:repeat(4,1fr)}
+  .cta-btns{flex-direction:row;justify-content:center}
+  .cta-contact-row{flex-direction:row;justify-content:center;flex-wrap:wrap;gap:16px 36px}
+  .price-cta-pair{flex-direction:row;justify-content:center}
+  .swipe-banner{display:none}
+  .screenshot-grid{grid-template-columns:repeat(4,1fr)}
+  .price-footer{grid-template-columns:repeat(3,1fr)}
+}
+
+@media(min-width:1024px){
+  .hero-content-grid{
+    display:grid;grid-template-columns:1fr 1fr;column-gap:80px;align-items:end;
+  }
+  .hero-left{grid-column:1}
+  .hero-right{grid-column:2;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:6px}
+  .hero-stats{grid-column:1/-1}
+  .proc-wrap{display:grid;grid-template-columns:1fr 1.5fr;gap:80px;align-items:start}
+  .proc-sticky{position:sticky;top:100px}
+  .faq-wrap{display:grid;grid-template-columns:1fr 1.2fr;gap:80px;align-items:start}
+  .faq-sticky{position:sticky;top:100px}
+  .svc-top-row{flex-direction:row;justify-content:space-between}
+  .pain-grid{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body class="noise">
+
+<div id="prog"></div>
+<div id="cur"></div>
+<div id="cur-dot"></div>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-in">
+    <div class="logo">J1<em>ED</em>3SIGN</div>
+    <div class="nav-links">
+      <a href="#cases">作品</a>
+      <a href="#services">服务</a>
+      <a href="#pricing">价格</a>
+      <a href="#process">流程</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a href="#cta" class="nav-btn">免费试做 →</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════
+     HERO
+══════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-particles" id="particles"></div>
+  <div class="hero-scroll"><div class="scroll-line"></div><span class="scroll-txt">scroll</span></div>
+
+  <div class="hero-content">
+    <div class="hero-content-grid">
+      <div class="hero-left">
+        <div class="hero-tag"><div class="hero-pulse"></div>专业社媒设计 · Johor · Malaysia</div>
+        <h1 class="hero-h1">
+          <span class="line1">J1ED3SIGN Studio</span>
+          <span class="big">设计，让</span>
+          <span class="big2">生意<br>被看见。</span>
+        </h1>
+      </div>
+      <div class="hero-right">
+        <p class="hero-sub">
+          还在等顾客自动送上门？<br>
+          <em>我们帮你把流量吸过来。</em>
+        </p>
+        <div class="hero-btns" style="margin-top:24px">
+          <a href="#cases" class="btn-gold">👀 看成功案例</a>
+          <a href="#cta" class="btn-glass">📲 WhatsApp免费试做</a>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="h-stat">
+          <div class="h-num"><span class="count" data-t="20">0</span><span class="accent">+</span></div>
+          <div class="h-label">真实作品案例</div>
+        </div>
+        <div class="h-stat">
+          <div class="h-num"><span class="count" data-t="3">0</span><span class="accent">×</span></div>
+          <div class="h-label">客流平均增加</div>
+        </div>
+        <div class="h-stat">
+          <div class="h-num">RM<span class="accent">0</span></div>
+          <div class="h-label">首周免费试做</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════
+     PAIN
+══════════════════════════ -->
+<section class="sec pain">
+  <div class="wrap">
+    <div class="pain-title-wrap">
+      <div class="pain-overline" data-r="up">老板的心声</div>
+      <h2 class="pain-main-title" data-r="up" data-d="d1">
+        <span class="muted-line">老板，是不是也</span>
+        遇到这些<span class="gold-line">问题？</span>
+      </h2>
+    </div>
+
+    <div class="pain-stat-bar" data-r="up" data-d="d2">
+      <span class="num">86%</span> 的大马消费者，在光顾一家店之前，<strong>都会先去看你的 FB 或 IG</strong>。如果你的账号空空或帖子不专业，他们会直接<strong>去试别家</strong>。
+    </div>
+
+    <div class="pain-grid">
+      <div class="pain-card" data-r="up" data-d="d1">
+        <div class="pain-card-num">01</div>
+        <div class="pain-body">
+          <div class="pain-heading">做到要死，Like 没有几个</div>
+          <div class="pain-text">FB/IG 开了几年，发出去的 post like 才二三十个，还大多是自己人按的。别家随便发都几百个，看了真的很闲。</div>
+        </div>
+      </div>
+      <div class="pain-card" data-r="up" data-d="d2">
+        <div class="pain-card-num">02</div>
+        <div class="pain-body">
+          <div class="pain-heading">哪里还有时间想 content？</div>
+          <div class="pain-text">每天要顾工人、点货、做生意，上厕所都不得空——还要怎样写文案、拍照、修图？上次发 post 已经是上个月的事了。</div>
+        </div>
+      </div>
+      <div class="pain-card" data-r="up" data-d="d3">
+        <div class="pain-card-num">03</div>
+        <div class="pain-body">
+          <div class="pain-heading">不懂发什么，随便上了事</div>
+          <div class="pain-text">想到就随便发一下，没有方向没有策略。结果发了 = 没有发，根本吸引不到新顾客，做来自己爽罢了。</div>
+        </div>
+      </div>
+      <div class="pain-card" data-r="up" data-d="d4">
+        <div class="pain-card-num">04</div>
+        <div class="pain-body">
+          <div class="pain-heading">请设计师太贵，不请又怕输</div>
+          <div class="pain-text">请一个设计师都要几千块一个月，做小生意哪顶得顺？但不做线上宣传，真的吸引不到年轻顾客。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pain-truth" data-r="scale">
+      <div class="truth-quote">
+        "你不是不重视生意——<br>你只是没时间兼顾每一件事。<br><strong>这就是我们存在的原因。</strong>"
+      </div>
+      <div class="truth-sub">我们帮你搞定 account，你负责做好生意。</div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     DATA PROOF
+══════════════════════════ -->
+<section class="sec data">
+  <div class="data-bg-txt">DATA</div>
+  <div class="wrap">
+    <div class="sec-eyebrow" data-r="up">用真实数据说话</div>
+    <div class="data-grid">
+      <div class="data-item" data-r="up" data-d="d1">
+        <div class="data-num">86<span style="font-size:.5em;letter-spacing:0">%</span></div>
+        <div class="data-label">大马消费者先查 FB/IG</div>
+        <div class="data-desc">如果你的账号空空或者帖子不好看，他们宁可去试别家，也不会给你机会。</div>
+      </div>
+      <div class="data-item" data-r="up" data-d="d2">
+        <div class="data-num">3<span style="font-size:.5em;letter-spacing:0">×</span></div>
+        <div class="data-label">客流量平均增加倍数</div>
+        <div class="data-desc">有专业内容的商家，吸引到的咨询量是普通商家的几倍。这不是讲爽的，是市场数据。</div>
+      </div>
+      <div class="data-item" data-r="up" data-d="d3">
+        <div class="data-num">20<span style="font-size:.5em;letter-spacing:0">+</span></div>
+        <div class="data-label">真实落地作品案例</div>
+        <div class="data-desc">从 Kopitiam 到 Cafe，零售店到网卖，我们都有实打实的经验帮你引流。</div>
+      </div>
+    </div>
+    <div class="data-cta-truth" data-r="up">
+      <div class="data-truth-title">"对比不是为了好看，是为了<strong style="color:var(--gold)">转化</strong>。以前发五个 post，0 个新客问；现在每一条 post，都在帮你 auto 筛选潜在客户。"</div>
+      <div class="data-truth-sub">— <strong>J1ED3SIGN</strong> · 专注大马本地商家社媒增长</div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     BEFORE / AFTER CASES
+══════════════════════════ -->
+<section class="sec cases" id="cases">
+  <div class="wrap">
+    <div class="cases-hdr">
+      <div class="sec-eyebrow" data-r="up">作品效果展示</div>
+      <div class="cases-title-wrap" data-r="up" data-d="d1">
+        <div class="cases-big">
+          <span>Before </span><span class="stroke">VS </span><span class="gold">After.</span>
+        </div>
+        <div class="cases-big" style="font-size:clamp(20px,4vw,44px);color:rgba(255,255,255,.22);margin-top:4px">同样的商品，不同的呈现——差别就是营业额的高低。</div>
+      </div>
+      <div class="cases-hint" data-r="up" data-d="d2">
+        <span>👆</span> 拖动中间分隔线，左右对比前后效果
+      </div>
+    </div>
+
+    <div class="cases-grid">
+
+      <!-- CASE 1 -->
+      <div class="case" data-r="scale" data-d="d1">
+        <div class="case-header">
+          <div class="case-dot" style="background:#8a1888"></div>
+          <div class="case-meta">
+            <div class="case-cat">餐饮 · F&B</div>
+            <div class="case-name">奶茶店 · 招牌产品帖</div>
+          </div>
+          <div class="case-tag">+280% 互动</div>
+        </div>
+        <div class="slider" data-slider>
+          <div class="s-layer s-back">
+            <div class="mock-a ma1">
+              <div class="glow"></div>
+              <div class="tag">⭐ 本周推介</div>
+              <div class="hl">黑糖珍珠<br>鲜奶茶</div>
+              <div class="sub">Brown Sugar Pearl Milk Tea</div>
+              <div class="em">🧋</div>
+              <div class="pbox"><div class="pr">RM 12.90</div><div class="st">★★★★★</div></div>
+            </div>
+          </div>
+          <div class="s-layer s-front">
+            <div class="mock-b">
+              <div class="mb-frame">🧋<div class="mb-bbl">随手拍</div></div>
+              <div class="mb-cap">黑糖奶茶 RM12.90<br>好喝哦！欢迎来试试😊</div>
+            </div>
+          </div>
+          <div class="s-lbl s-lbl-b">之前</div>
+          <div class="s-lbl s-lbl-a">之后</div>
+          <div class="s-divider"><div class="s-handle"><div class="s-arrows"><span>◀</span><span>▶</span></div></div></div>
+        </div>
+        <div class="case-metrics">
+          <div class="c-m"><div class="c-m-num was">~5</div><div class="c-m-lbl">之前 Likes</div></div>
+          <div class="c-m"><div class="c-m-num now">142+</div><div class="c-m-lbl">之后 Likes</div></div>
+          <div class="c-m"><div class="c-m-num price">RM250/月</div><div class="c-m-lbl">月费起</div></div>
+        </div>
+      </div>
+
+      <!-- CASE 2 -->
+      <div class="case" data-r="scale" data-d="d2">
+        <div class="case-header">
+          <div class="case-dot" style="background:#c85a10"></div>
+          <div class="case-meta">
+            <div class="case-cat">餐饮 · F&B</div>
+            <div class="case-name">咖啡店 · 买一送一促销</div>
+          </div>
+          <div class="case-tag">+5× 分享</div>
+        </div>
+        <div class="slider" data-slider>
+          <div class="s-layer s-back">
+            <div class="mock-a ma2">
+              <div class="c1"></div><div class="c2"></div>
+              <div class="big">买1<br>送1</div>
+              <div class="s1">Wednesday Boba Deal ☕</div>
+              <div class="s2">所有招牌系列 · 每周三 · 堂食限定</div>
+              <div class="em2">☕☕</div>
+              <div class="cta">今天下午 2PM 开始</div>
+            </div>
+          </div>
+          <div class="s-layer s-front">
+            <div class="mock-b">
+              <div class="mb-frame">☕<div class="mb-bbl">没设计</div></div>
+              <div class="mb-cap">今天买一送一！！！<br>下午2点开始👍👍👍</div>
+            </div>
+          </div>
+          <div class="s-lbl s-lbl-b">之前</div>
+          <div class="s-lbl s-lbl-a">之后</div>
+          <div class="s-divider"><div class="s-handle"><div class="s-arrows"><span>◀</span><span>▶</span></div></div></div>
+        </div>
+        <div class="case-metrics">
+          <div class="c-m"><div class="c-m-num was">~18</div><div class="c-m-lbl">之前 分享</div></div>
+          <div class="c-m"><div class="c-m-num now">96+</div><div class="c-m-lbl">之后 分享</div></div>
+          <div class="c-m"><div class="c-m-num price">RM250/月</div><div class="c-m-lbl">月费起</div></div>
+        </div>
+      </div>
+
+      <!-- CASE 3 -->
+      <div class="case" data-r="scale" data-d="d1">
+        <div class="case-header">
+          <div class="case-dot" style="background:#c8a84b"></div>
+          <div class="case-meta">
+            <div class="case-cat">美发 · Hair Salon</div>
+            <div class="case-name">美发店 · 服务推介帖</div>
+          </div>
+          <div class="case-tag">+45% 预约</div>
+        </div>
+        <div class="slider" data-slider>
+          <div class="s-layer s-back">
+            <div class="mock-a ma3">
+              <div class="ma3-top">✂️</div>
+              <div class="ma3-bot">
+                <div class="ma3-tag">✦ 本月特别优惠</div>
+                <div class="ma3-hl">头发，是你<br>每天的造型。</div>
+                <div class="ma3-row"><div class="ma3-pr">RM 88</div><div class="ma3-btn">立即预约 →</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="s-layer s-front">
+            <div class="mock-b">
+              <div class="mb-frame">✂️<div class="mb-bbl">无品牌感</div></div>
+              <div class="mb-cap">剪发+染发 RM88<br>快来预约！联系我哦😊</div>
+            </div>
+          </div>
+          <div class="s-lbl s-lbl-b">之前</div>
+          <div class="s-lbl s-lbl-a">之后</div>
+          <div class="s-divider"><div class="s-handle"><div class="s-arrows"><span>◀</span><span>▶</span></div></div></div>
+        </div>
+        <div class="case-metrics">
+          <div class="c-m"><div class="c-m-num was">~8</div><div class="c-m-lbl">之前 预约</div></div>
+          <div class="c-m"><div class="c-m-num now">+45%</div><div class="c-m-lbl">预约提升</div></div>
+          <div class="c-m"><div class="c-m-num price">RM250/月</div><div class="c-m-lbl">月费起</div></div>
+        </div>
+      </div>
+
+      <!-- CASE 4 -->
+      <div class="case" data-r="scale" data-d="d2">
+        <div class="case-header">
+          <div class="case-dot" style="background:#64c8dc"></div>
+          <div class="case-meta">
+            <div class="case-cat">品牌故事 · Brand Story</div>
+            <div class="case-name">幕后故事帖 · 建立信任感</div>
+          </div>
+          <div class="case-tag">+8× 收藏</div>
+        </div>
+        <div class="slider" data-slider>
+          <div class="s-layer s-back">
+            <div class="mock-a ma4" style="align-items:flex-start;padding:22px">
+              <div class="ma4-grid"></div>
+              <div class="ma4-tag">Behind The Cup</div>
+              <div class="ma4-hl">一杯奶茶背后<br>的<span>坚持</span></div>
+              <div class="ma4-steps">
+                <div class="ma4-step"><div class="ma4-num">1</div>每天早上6点熬煮新鲜黑糖</div>
+                <div class="ma4-step"><div class="ma4-num">2</div>台湾进口珍珠，现煮现卖不隔夜</div>
+                <div class="ma4-step"><div class="ma4-num">3</div>本地农场鲜奶，每天新鲜直送</div>
+              </div>
+              <div class="ma4-div"></div>
+              <div class="ma4-foot">一口就回来 · <strong>10年了</strong></div>
+            </div>
+          </div>
+          <div class="s-layer s-front">
+            <div class="mock-b">
+              <div class="mb-frame">🏪<div class="mb-bbl">没故事感</div></div>
+              <div class="mb-cap">我们用最好的材料做奶茶。<br>请大家支持！谢谢😊</div>
+            </div>
+          </div>
+          <div class="s-lbl s-lbl-b">之前</div>
+          <div class="s-lbl s-lbl-a">之后</div>
+          <div class="s-divider"><div class="s-handle"><div class="s-arrows"><span>◀</span><span>▶</span></div></div></div>
+        </div>
+        <div class="case-metrics">
+          <div class="c-m"><div class="c-m-num was">~3</div><div class="c-m-lbl">之前 收藏</div></div>
+          <div class="c-m"><div class="c-m-num now">89+</div><div class="c-m-lbl">之后 收藏</div></div>
+          <div class="c-m"><div class="c-m-num price">RM250/月</div><div class="c-m-lbl">月费起</div></div>
+        </div>
+      </div>
+
+      <!-- CASE 5 (full width) -->
+      <div class="case" data-r="scale">
+        <div class="case-header">
+          <div class="case-dot" style="background:#c8a84b"></div>
+          <div class="case-meta">
+            <div class="case-cat">节日季节 · Seasonal</div>
+            <div class="case-name">开斋节 / 节日特别帖</div>
+          </div>
+          <div class="case-tag">+3× 进店</div>
+        </div>
+        <div class="slider" data-slider>
+          <div class="s-layer s-back">
+            <div class="mock-a ma5">
+              <div class="ma5-stars">
+                <div class="ma5-star" style="width:4px;height:4px;top:15%;left:20%;animation-delay:0s"></div>
+                <div class="ma5-star" style="width:3px;height:3px;top:28%;left:72%;animation-delay:.7s"></div>
+                <div class="ma5-star" style="width:5px;height:5px;top:62%;left:12%;animation-delay:1.2s"></div>
+                <div class="ma5-star" style="width:3px;height:3px;top:76%;left:80%;animation-delay:.4s"></div>
+                <div class="ma5-star" style="width:4px;height:4px;top:42%;left:86%;animation-delay:1.8s"></div>
+              </div>
+              <div class="ma5-badge">🌙 Selamat Hari Raya</div>
+              <div class="ma5-em">🌙✨</div>
+              <div class="ma5-hl">开斋节限定<br>特别套餐</div>
+              <div class="ma5-sub">Hanya untuk hari ini · 今日限定</div>
+              <div class="ma5-cta">查看完整菜单 →</div>
+            </div>
+          </div>
+          <div class="s-layer s-front">
+            <div class="mock-b">
+              <div class="mb-frame">🌙<div class="mb-bbl">无节日感</div></div>
+              <div class="mb-cap">Selamat Hari Raya！<br>今天有优惠！快来！🎉🎉</div>
+            </div>
+          </div>
+          <div class="s-lbl s-lbl-b">之前</div>
+          <div class="s-lbl s-lbl-a">之后</div>
+          <div class="s-divider"><div class="s-handle"><div class="s-arrows"><span>◀</span><span>▶</span></div></div></div>
+        </div>
+        <div class="case-metrics">
+          <div class="c-m"><div class="c-m-num was">平时</div><div class="c-m-lbl">节日前进店</div></div>
+          <div class="c-m"><div class="c-m-num now">+3×</div><div class="c-m-lbl">节日当天增长</div></div>
+          <div class="c-m"><div class="c-m-num price">RM250/月</div><div class="c-m-lbl">月费起</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     TRANSFORMATION LIST
+══════════════════════════ -->
+<section class="sec transform">
+  <div class="wrap">
+    <div class="sec-eyebrow" data-r="up">合作前后的变化</div>
+    <h2 class="transform-title" data-r="up" data-d="d1">
+      <span class="sm">你的 social media 是时候</span>
+      从 kampung style<br><span class="hl">升级一下了。</span>
+    </h2>
+
+    <div class="transform-cards">
+      <div class="t-card" data-r="left">
+        <div class="t-card-hdr bad"><span class="t-card-icon">⚠️</span>合作前</div>
+        <div class="t-card-body">
+          <div class="t-item"><span class="ico">📷</span>随便拍，模糊灯光暗，顾客看了没食欲</div>
+          <div class="t-item"><span class="ico">✍️</span>只会写"好吃"，没有故事，没有钩子</div>
+          <div class="t-item"><span class="ico">😴</span>几个月没发 post，顾客还以为你倒闭了</div>
+          <div class="t-item"><span class="ico">👎</span>Like 才几十个，都是认识的，新客零咨询</div>
+          <div class="t-item"><span class="ico">🎨</span>颜色死板，没有风格特点，完全没品牌感</div>
+        </div>
+      </div>
+      <div class="t-card" data-r="right">
+        <div class="t-card-hdr good"><span class="t-card-icon">✨</span>合作后</div>
+        <div class="t-card-body">
+          <div class="t-item"><span class="ico">🍽️</span>专业视觉设计，还没吃就已经流口水</div>
+          <div class="t-item"><span class="ico">💬</span>有温度的文案，顾客还没来就先想象到味道</div>
+          <div class="t-item"><span class="ico">📅</span>定时 update，每次都在提醒"喂，是时候来了"</div>
+          <div class="t-item"><span class="ico">📈</span>互动率飙升，精准吸引真正会来的新客</div>
+          <div class="t-item"><span class="ico">🎯</span>统一品牌颜色，看封面就知道是你家的</div>
+        </div>
+      </div>
+    </div>
+    <div class="transform-truth" data-r="up">
+      同样的食物，不同的呈现方式——<br>差别就是<strong>营业额的高低</strong>。
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     SERVICES
+══════════════════════════ -->
+<section class="sec services" id="services">
+  <div class="wrap">
+    <div class="svc-header">
+      <div class="sec-eyebrow" data-r="up">我们提供什么</div>
+      <h2 class="svc-title-main" data-r="up" data-d="d1">
+        你专心做生意，<br><span class="light">剩下的</span>交给我们。
+      </h2>
+      <div class="svc-title-sub" data-r="up" data-d="d2">从设计到文案，一条龙搞定。你只管 post，省下所有麻烦事。</div>
+    </div>
+
+    <div class="svc-list">
+      <div class="svc-item" data-r="up" data-d="d1">
+        <div class="svc-top-row">
+          <div>
+            <div class="svc-icon">🎨</div>
+            <div class="svc-name">专业帖子设计</div>
+            <div class="svc-desc">每周 3–5 张精修视觉图，专属于你店铺的独特 style。统一视觉风格让顾客一眼就能认出你——从来没有两家店的设计是一样的。</div>
+            <div class="svc-chips">
+              <span class="svc-chip">Story + Post 全套尺寸</span>
+              <span class="svc-chip">品牌色系统一</span>
+              <span class="svc-chip">节日主题海报</span>
+              <span class="svc-chip">48小时交付</span>
+            </div>
+          </div>
+          <div class="svc-big-num">01</div>
+        </div>
+      </div>
+
+      <div class="svc-item" data-r="up" data-d="d2">
+        <div class="svc-top-row">
+          <div>
+            <div class="svc-icon">✍️</div>
+            <div class="svc-name">本地文案策划</div>
+            <div class="svc-desc">中、英、BM 三语文案，根据你的顾客群量身定制。不是 Google Translate 的生硬翻译，是真正懂大马人痛点和消费心理的在地文案。</div>
+            <div class="svc-chips">
+              <span class="svc-chip">三语灵活切换</span>
+              <span class="svc-chip">情感钩子文案</span>
+              <span class="svc-chip">促销文案策划</span>
+              <span class="svc-chip">精准 Hashtag 研究</span>
+            </div>
+          </div>
+          <div class="svc-big-num">02</div>
+        </div>
+      </div>
+
+      <div class="svc-item" data-r="up" data-d="d3">
+        <div class="svc-top-row">
+          <div>
+            <div class="svc-icon">📅</div>
+            <div class="svc-name">月度营销策略</div>
+            <div class="svc-desc">什么时候推新品？什么时候做 promotion？节日内容怎么排？我们帮你规划好，让账号有节奏地保持热度，掌控流量节奏。</div>
+            <div class="svc-chips">
+              <span class="svc-chip">月度内容日历</span>
+              <span class="svc-chip">节日策划全套</span>
+              <span class="svc-chip">月度效果分析</span>
+              <span class="svc-chip">内容方向调整</span>
+            </div>
+          </div>
+          <div class="svc-big-num">03</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     PRICING
+══════════════════════════ -->
+<section class="sec pricing" id="pricing">
+  <div class="wrap">
+    <div class="sec-eyebrow" data-r="up">套餐价格</div>
+    <h2 class="price-title" data-r="up" data-d="d1">价格透明，<br>没有隐藏收费。</h2>
+    <div class="price-subtitle" data-r="up" data-d="d2">一天不到你一餐的钱，设计 / 文案 / 策略一手包办。</div>
+
+    <div class="price-grid">
+      <div class="p-card basic" data-r="up" data-d="d1">
+        <div class="p-tier">基础版 · Starter</div>
+        <div class="p-amount">RM250</div>
+        <div class="p-period">/月 · 每月付款</div>
+        <div class="p-divider"></div>
+        <div class="p-feats">
+          <div class="p-f"><span class="ck">✓</span>每周 3 张设计图</div>
+          <div class="p-f"><span class="ck">✓</span>每月内容策划</div>
+          <div class="p-f"><span class="ck">✓</span>48 小时交付</div>
+          <div class="p-f"><span class="ck">✓</span>单语文案</div>
+          <div class="p-f"><span class="cr">–</span>Stories 版本</div>
+          <div class="p-f"><span class="cr">–</span>三语文案</div>
+        </div>
+        <div class="p-note">适合刚起步，想先试试看的老板</div>
+      </div>
+
+      <div class="p-card pro" data-r="scale" data-d="d2">
+        <div class="p-badge">最受欢迎 · Most Popular</div>
+        <div class="p-tier">专业版 · Professional</div>
+        <div class="p-amount">RM488</div>
+        <div class="p-period">/月 · 每月付款</div>
+        <div class="p-divider"></div>
+        <div class="p-feats">
+          <div class="p-f"><span class="ck">✓</span>每周 4 张设计图</div>
+          <div class="p-f"><span class="ck">✓</span>三语文案（中 / 英 / BM）</div>
+          <div class="p-f"><span class="ck">✓</span>每月营销策略 + Hashtag 研究</div>
+          <div class="p-f"><span class="ck">✓</span>含 Stories 版设计</div>
+          <div class="p-f"><span class="ck">✓</span>节假日主题海报</div>
+          <div class="p-f"><span class="ck">✓</span>月度效果分析</div>
+          <div class="p-f"><span class="ck">✓</span>48 小时交付</div>
+        </div>
+        <div class="p-note">适合要三语、要更多曝光的成长店铺</div>
+      </div>
+
+      <div class="p-card premium" data-r="up" data-d="d3">
+        <div class="p-tier">旗舰款 · Premium</div>
+        <div class="p-amount">RM888</div>
+        <div class="p-period">/月 · 每月付款</div>
+        <div class="p-divider"></div>
+        <div class="p-feats">
+          <div class="p-f"><span class="ck">✓</span>每周 5 张设计图</div>
+          <div class="p-f"><span class="ck">✓</span>三语文案 + 策略分析</div>
+          <div class="p-f"><span class="ck">✓</span>年度内容战略规划</div>
+          <div class="p-f"><span class="ck">✓</span>Stories + Reels 封面设计</div>
+          <div class="p-f"><span class="ck">✓</span>促销活动全案</div>
+          <div class="p-f"><span class="ck">✓</span>无限修改</div>
+          <div class="p-f"><span class="ck">✓</span>详细月度分析报告</div>
+          <div class="p-f"><span class="ck">✓</span>优先 24 小时交付</div>
+        </div>
+        <div class="p-note">适合多分店、要做大做强的品牌</div>
+      </div>
+    </div>
+
+    <div class="price-footer" data-r="up">
+      <div class="pf-item"><span class="ico">🎯</span><span>免费试做，满意才付钱——无定金，无隐形条款。</span></div>
+      <div class="pf-item"><span class="ico">🔄</span><span>这个月合作，下个月想停也没关系，没有脸色看。</span></div>
+      <div class="pf-item"><span class="ico">💰</span><span>每天最低 RM8 多，就可以请一整个线上营销团队帮你顾店！</span></div>
+    </div>
+
+    <div class="price-cta-pair" data-r="up">
+      <a href="#cta" class="btn-gold">📲 立即咨询</a>
+      <a href="#trust" class="btn-glass">还在担心？往下看 ↓</a>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     PROCESS
+══════════════════════════ -->
+<section class="sec process" id="process">
+  <div class="wrap">
+    <div class="proc-wrap">
+      <div class="proc-sticky">
+        <div class="sec-eyebrow" data-r="up">合作流程</div>
+        <h2 class="proc-title" data-r="up" data-d="d1">
+          从讲 <span class="dim">"OK"</span><br>到发 post<br>出去，<br>只要这几步。
+        </h2>
+      </div>
+      <div class="proc-steps">
+        <div class="proc-step" data-r="up" data-d="d1">
+          <div class="proc-dot">1</div>
+          <div class="proc-body">
+            <div class="proc-title-txt">WhatsApp 聊一下</div>
+            <div class="proc-time">⏱ 约 20 分钟 · 第 1 天</div>
+            <div class="proc-desc">你只需要讲你卖什么、target customer 是谁、想走什么 style。不用 prepare 任何东西，relax 聊想法就可以。</div>
+            <div class="proc-bullets">
+              <div class="proc-bul">你卖什么</div>
+              <div class="proc-bul">Target customer 是谁</div>
+              <div class="proc-bul">高级 / 简约 / 本土风？</div>
+            </div>
+          </div>
+        </div>
+        <div class="proc-step" data-r="up" data-d="d2">
+          <div class="proc-dot">2</div>
+          <div class="proc-body">
+            <div class="proc-title-txt">不用定金，不用签约——我们直接帮你做</div>
+            <div class="proc-time">⏱ 第 2–3 天 · 你什么都不用做</div>
+            <div class="proc-desc">设计图 + 文案，我们做好发给你。你看效果——满意才继续讲合作，不满意当交个朋友，没有损失。</div>
+          </div>
+        </div>
+        <div class="proc-step" data-r="up" data-d="d3">
+          <div class="proc-dot">3</div>
+          <div class="proc-body">
+            <div class="proc-title-txt">满意了，选好 package 就开工</div>
+            <div class="proc-time">⏱ 第 4 天起 · 每月准时交货</div>
+            <div class="proc-desc">你只要三步：</div>
+            <div class="proc-bullets">
+              <div class="proc-bul">Copy（复制）</div>
+              <div class="proc-bul">Paste（粘贴）</div>
+              <div class="proc-bul">Post（发布）——5 分钟搞定</div>
+            </div>
+          </div>
+        </div>
+        <div class="proc-step" data-r="up" data-d="d4">
+          <div class="proc-dot">4</div>
+          <div class="proc-body">
+            <div class="proc-title-txt">根据数据帮你调整方向</div>
+            <div class="proc-time">⏱ 持续每个月</div>
+            <div class="proc-desc">让你的内容越来越准：更多人看到并询问、稳定吸引新客、慢慢从路人变回头客、变老顾客。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     TRUST / TESTIMONIALS
+══════════════════════════ -->
+<section class="sec trust" id="trust">
+  <div class="wrap">
+    <div class="sec-eyebrow" data-r="up">为什么信任我们</div>
+    <h2 class="trust-title" data-r="up" data-d="d1">
+      <span class="ital">听听看其他老板怎样讲</span>
+      我们不只是<br>帮你做图。
+    </h2>
+
+    <div class="screenshot-grid" data-r="scale">
+      <div class="ss-card">
+        <div class="ss-icon">📱</div>
+        <div class="ss-badge">真实截图</div>
+        <div class="ss-txt">客户好评 · 即将更新</div>
+      </div>
+      <div class="ss-card">
+        <div class="ss-icon">💬</div>
+        <div class="ss-badge">WhatsApp 对话</div>
+        <div class="ss-txt">真实对话 · 即将更新</div>
+      </div>
+      <div class="ss-card">
+        <div class="ss-icon">📊</div>
+        <div class="ss-badge">IG 洞察数据</div>
+        <div class="ss-txt">真实数据 · 即将更新</div>
+      </div>
+      <div class="ss-card">
+        <div class="ss-icon">⭐</div>
+        <div class="ss-badge">Google 好评</div>
+        <div class="ss-txt">真实评价 · 即将更新</div>
+      </div>
+    </div>
+
+    <div class="t-quote-block" data-r="up">
+      <div class="t-stars">★★★★★</div>
+      <div class="t-text">
+        "之前我们 Instagram 一个月才发两三次，也没什么人看。自从找了他们帮忙，每周都有新内容，顾客开始说是在网上看到才来的——这真的让我们很惊讶！"
+      </div>
+      <div class="t-by">SS15 奶茶店老板 · Subang Jaya</div>
+    </div>
+
+    <div class="trust-grid">
+      <div class="tr-card" data-r="up" data-d="d1">
+        <div class="tr-icon">🎯</div>
+        <div class="tr-title">绝不套模版</div>
+        <div class="tr-txt">每一张图都根据你的实物、你的价钱、你的品牌来做 design。</div>
+      </div>
+      <div class="tr-card" data-r="up" data-d="d2">
+        <div class="tr-icon">🔄</div>
+        <div class="tr-title">改到满意为止</div>
+        <div class="tr-txt">不满意就改，改到确认为止，没有额外收费。这是承诺。</div>
+      </div>
+      <div class="tr-card" data-r="up" data-d="d3">
+        <div class="tr-icon">⚡</div>
+        <div class="tr-title">48小时内拿图</div>
+        <div class="tr-txt">效率保证，不耽误你做生意。你随时可以发布，不会误了时机。</div>
+      </div>
+      <div class="tr-card" data-r="up" data-d="d4">
+        <div class="tr-icon">🛡️</div>
+        <div class="tr-title">首周免费零风险</div>
+        <div class="tr-txt">先看效果再决定。没有预付款，没有合约绑定，随时可以停。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     FAQ
+══════════════════════════ -->
+<section class="sec faq" id="faq">
+  <div class="wrap">
+    <div class="faq-wrap">
+      <div class="faq-sticky">
+        <div class="sec-eyebrow" data-r="up">常见问题</div>
+        <h2 class="faq-title" data-r="up" data-d="d1">
+          老板，<br><span class="dim">你可能</span><br>想问的。<span class="gold">↓</span>
+        </h2>
+        <a href="#cta" class="btn-glass" style="margin-top:24px;display:inline-flex" data-r="up" data-d="d2">其他问题直接问我们 →</a>
+      </div>
+      <div class="faq-list" data-r="up">
+        <div class="faq-item">
+          <button class="faq-q">我需要给你们什么素材？<span class="faq-ico">+</span></button>
+          <div class="faq-a">几乎不需要你做任何事。只需要告诉我们你的生意故事、这个月有没有促销就够了。照片、设计都由我们搞定——我们用专业工具制作视觉内容，不用你专门去拍照。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">我完全不懂网络，可以合作吗？<span class="faq-ico">+</span></button>
+          <div class="faq-a">没问题！我们会给你完整的发布指引。你只需要把做好的图片和文案，复制粘贴到 Instagram 或 Facebook 发出去——整个过程不超过 5 分钟，不需要任何技术知识。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">内容是华语还是英文？<span class="faq-ico">+</span></button>
+          <div class="faq-a">根据你的顾客群来决定。我们可以做华语、英语、BM，也可以三语混合——比如标题华语，说明英语，hashtag BM。专业版以上包含全三语，灵活搭配。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">如果我不喜欢 design 风格怎么办？<span class="faq-ico">+</span></button>
+          <div class="faq-a">修改是服务的一部分，不另外收费。首周免费试做就是让你亲眼看风格——如果不合，我们会调整到你满意。长期合作后，我们越了解你的口味，修改会越来越少。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">合作多久才会看到效果？<span class="faq-ico">+</span></button>
+          <div class="faq-a">第 1–2 个月主要建立品牌形象，第 3 个月互动开始明显提升，3–6 个月后会有顾客主动说"我是在 Instagram 看到才来的"。持续专业的内容一定比随手发帖效果好得多。</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">我可以随时取消吗？<span class="faq-ico">+</span></button>
+          <div class="faq-a">可以。没有锁定合同，随时可以停止合作，没有额外费用。不过通常合作到第二个月，老板就不想停了——因为效果真的出来了。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════
+     FINAL CTA
+══════════════════════════ -->
+<section class="cta" id="cta">
+  <div class="cta-bg"></div>
+  <div class="wrap">
+    <div class="cta-eyebrow" data-r="up">不要犹豫，敢敢来</div>
+    <h2 class="cta-title" data-r="up" data-d="d1">
+      不要让你的生意，<br>输在一张<br><span class="gold">"不好看"</span><br><span class="dim">的照片上。</span>
+    </h2>
+    <p class="cta-sub" data-r="up" data-d="d2">
+      先试做，满意才谈合作，<em>零风险</em>。<br>
+      你点头，其他的我们搞掂！
+    </p>
+
+    <div class="cta-btns" data-r="up" data-d="d3">
+      <div class="magnetic">
+        <a href="https://wa.me/60142295317?text=你好，我想了解社媒内容服务，可以帮我免费试做一周看看吗？" class="btn-wa">
+          📱 WhatsApp 我，马上开始
+        </a>
+      </div>
+      <div class="magnetic">
+        <a href="https://www.facebook.com/j1ed3sign" class="btn-fb">
+          📘 Facebook 找我们
+        </a>
+      </div>
+    </div>
+
+    <div class="cta-contacts" data-r="up" data-d="d4">
+      <div class="cta-contact-hdr">直接联系</div>
+      <div class="cta-contact-row">
+        <div class="c-item">📱 <strong>WhatsApp：014-229 5317</strong></div>
+        <div class="c-item">📸 <strong>Instagram：@j1ed3sign.studio</strong></div>
+        <div class="c-item">📘 <strong>Facebook：j1ed3sign</strong></div>
+      </div>
+    </div>
+
+    <div style="margin-top:clamp(36px,6vw,72px);padding-top:clamp(24px,4vw,48px);border-top:1px solid var(--border);text-align:center;font-size:12px;color:rgba(255,255,255,.2);letter-spacing:.5px" data-r="up">
+      ⭐ 不要让你现在的形象，拖慢你赚钱的脚步。反正试做不用钱，试了才懂效果嘛！
+    </div>
+  </div>
+</section>
+
+<!-- SWIPE BANNER (mobile) -->
+<div class="swipe-banner" id="swipeBanner">
+  <div class="sb-text"><strong>👆 拖动分隔线</strong>，对比设计前后效果差距</div>
+  <button class="sb-close" onclick="document.getElementById('swipeBanner').classList.add('gone')">✕</button>
+</div>
+
+<script>
+/* ════════════════════════════
+   CURSOR
+════════════════════════════ */
+const cur = document.getElementById('cur');
+const curDot = document.getElementById('cur-dot');
+let mx=0,my=0,cx=0,cy=0;
+if(window.innerWidth>1023){
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;curDot.style.left=mx+'px';curDot.style.top=my+'px';},{passive:true});
+  (function tick(){cx+=(mx-cx)*.1;cy+=(my-cy)*.1;cur.style.left=cx+'px';cur.style.top=cy+'px';requestAnimationFrame(tick)})();
+}
+
+/* ════════════════════════════
+   SCROLL PROGRESS
+════════════════════════════ */
+const prog=document.getElementById('prog');
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement.scrollHeight-window.innerHeight;
+  prog.style.width=(window.scrollY/h*100)+'%';
+},{passive:true});
+
+/* ════════════════════════════
+   NAV OPACITY
+════════════════════════════ */
+const nav=document.querySelector('nav');
+window.addEventListener('scroll',()=>{
+  nav.style.background=window.scrollY>80?'rgba(8,8,6,.97)':'rgba(8,8,6,.82)';
+},{passive:true});
+
+/* ════════════════════════════
+   PARTICLES
+════════════════════════════ */
+const pCont=document.getElementById('particles');
+for(let i=0;i<18;i++){
+  const d=document.createElement('div');
+  d.className='p-dot';
+  const s=Math.random()*4+1;
+  d.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*12+8}s;animation-delay:${Math.random()*10}s;opacity:0`;
+  pCont.appendChild(d);
+}
+
+/* ════════════════════════════
+   REVEAL OBSERVER
+════════════════════════════ */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const d=e.target.dataset.d||'';
+      const delay=d?{d1:80,d2:160,d3:240,d4:320,d5:400}[d]||0:0;
+      setTimeout(()=>e.target.classList.add('in'),delay);
+      obs.unobserve(e.target);
+    }
+  });
+},{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('[data-r]').forEach(el=>obs.observe(el));
+
+/* ════════════════════════════
+   COUNTER ANIMATION
+════════════════════════════ */
+const cObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const el=e.target,target=+el.dataset.t||0;
+    if(!target){el.textContent='0';return;}
+    const start=performance.now();
+    const dur=1400;
+    (function tick(now){
+      const p=Math.min((now-start)/dur,1);
+      const ease=1-Math.pow(1-p,3);
+      el.textContent=Math.round(ease*target);
+      if(p<1)requestAnimationFrame(tick);
+    })(start);
+    cObs.unobserve(el);
+  });
+},{threshold:.5});
+document.querySelectorAll('.count[data-t]').forEach(c=>cObs.observe(c));
+
+/* ════════════════════════════
+   SLIDER
+════════════════════════════ */
+document.querySelectorAll('[data-slider]').forEach(wrap=>{
+  const front=wrap.querySelector('.s-front');
+  const divider=wrap.querySelector('.s-divider');
+  let dragging=false;
+  function move(pct){
+    pct=Math.min(94,Math.max(6,pct));
+    front.style.clipPath=`inset(0 ${100-pct}% 0 0)`;
+    divider.style.left=pct+'%';
+  }
+  move(50);
+  function getPct(x){const r=wrap.getBoundingClientRect();return((x-r.left)/r.width)*100}
+  wrap.addEventListener('mousedown',e=>{dragging=true;move(getPct(e.clientX))});
+  wrap.addEventListener('touchstart',e=>{dragging=true;move(getPct(e.touches[0].clientX));e.preventDefault();},{passive:false});
+  window.addEventListener('mousemove',e=>{if(dragging)move(getPct(e.clientX))});
+  window.addEventListener('touchmove',e=>{if(dragging){move(getPct(e.touches[0].clientX));e.preventDefault();}},{passive:false});
+  window.addEventListener('mouseup',()=>dragging=false);
+  window.addEventListener('touchend',()=>dragging=false);
+  wrap.addEventListener('mousedown',()=>document.getElementById('swipeBanner')?.classList.add('gone'),{once:true});
+  wrap.addEventListener('touchstart',()=>document.getElementById('swipeBanner')?.classList.add('gone'),{once:true});
+});
+
+/* ════════════════════════════
+   FAQ ACCORDION
+════════════════════════════ */
+document.querySelectorAll('.faq-q').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const item=btn.closest('.faq-item');
+    const open=item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i=>{
+      i.classList.remove('open');
+      i.querySelector('.faq-ico').textContent='+';
+    });
+    if(!open){item.classList.add('open');btn.querySelector('.faq-ico').textContent='×';}
+  });
+});
+
+/* ════════════════════════════
+   MAGNETIC BUTTONS
+════════════════════════════ */
+if(window.innerWidth>1023){
+  document.querySelectorAll('.magnetic').forEach(el=>{
+    el.addEventListener('mousemove',e=>{
+      const r=el.getBoundingClientRect();
+      const x=(e.clientX-r.left-r.width/2)*.18;
+      const y=(e.clientY-r.top-r.height/2)*.18;
+      el.style.transform=`translate(${x}px,${y}px)`;
+    });
+    el.addEventListener('mouseleave',()=>el.style.transform='');
+  });
+}
+
+/* ════════════════════════════
+   CARD TILT EFFECT
+════════════════════════════ */
+if(window.innerWidth>1023){
+  document.querySelectorAll('.pain-card,.tr-card').forEach(card=>{
+    card.addEventListener('mousemove',e=>{
+      const r=card.getBoundingClientRect();
+      const x=((e.clientX-r.left)/r.width-.5)*8;
+      const y=((e.clientY-r.top)/r.height-.5)*8;
+      card.style.transform=`perspective(600px) rotateY(${x}deg) rotateX(${-y}deg) translateY(-3px)`;
+    });
+    card.addEventListener('mouseleave',()=>card.style.transform='');
+  });
+}
+
+/* ════════════════════════════
+   DATA NUMBERS COUNT ON SCROLL
+════════════════════════════ */
+const dataNums=document.querySelectorAll('.data-num');
+const dnObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const el=e.target;
+    const txt=el.textContent;
+    const match=txt.match(/(\d+)/);
+    if(!match){return;}
+    const target=parseInt(match[1]);
+    const suffix=txt.replace(/[\d]/g,'');
+    const dur=1600;
+    const start=performance.now();
+    (function tick(now){
+      const p=Math.min((now-start)/dur,1);
+      const ease=1-Math.pow(1-p,3);
+      const val=Math.round(ease*target);
+      el.innerHTML=`${val}${suffix}`;
+      if(p<1)requestAnimationFrame(tick);
+    })(start);
+    dnObs.unobserve(el);
+  });
+},{threshold:.4});
+dataNums.forEach(n=>dnObs.observe(n));
+</script>
+</body>
+</html>
